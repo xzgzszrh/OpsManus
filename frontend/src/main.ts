@@ -10,6 +10,7 @@ import { getStoredToken, getCachedAuthProvider } from './api/auth'
 // Import page components
 import HomePage from './pages/HomePage.vue'
 import ChatPage from './pages/ChatPage.vue'
+import NodeWorkspacePage from './pages/NodeWorkspacePage.vue'
 import LoginPage from './pages/LoginPage.vue'
 import MainLayout from './pages/MainLayout.vue'
 import { configure } from "vue-gtag";
@@ -36,6 +37,11 @@ export const router = createRouter({
           meta: { requiresAuth: true }
         },
         { 
+          path: 'nodes/:nodeId?',
+          component: NodeWorkspacePage,
+          meta: { requiresAuth: true }
+        },
+        {
           path: ':sessionId', 
           component: ChatPage,
           meta: { requiresAuth: true }

@@ -15,27 +15,33 @@
           <div class="text-sm font-semibold text-[var(--text-primary)] mt-0.5">服务器运维控制台</div>
         </div>
       </div>
-      <div class="flex">
-        <div class="flex items-center px-3 py-3 flex-row h-[52px] gap-1 justify-end w-full">
-          <div class="flex justify-between w-full px-1 pt-2">
-            <div class="relative flex">
-              <div
-                class="flex h-7 w-7 items-center justify-center cursor-pointer hover:bg-[var(--fill-tsp-gray-main)] rounded-md"
-                @click="toggleLeftPanel">
-                <PanelLeft class="h-5 w-5 text-[var(--icon-secondary)]" />
-              </div>
-            </div>
+
+      <div class="flex items-center px-3 py-3 h-[52px]">
+        <div class="flex justify-between w-full px-1 pt-2">
+          <div
+            class="flex h-7 w-7 items-center justify-center cursor-pointer hover:bg-[var(--fill-tsp-gray-main)] rounded-md"
+            @click="toggleLeftPanel">
+            <PanelLeft class="h-5 w-5 text-[var(--icon-secondary)]" />
           </div>
         </div>
       </div>
+
+      <div class="px-3 flex items-center gap-1 mb-2">
+        <button v-for="menu in menus" :key="menu.key" @click="switchMenu(menu.key)"
+          class="flex-1 h-8 rounded-lg text-sm border"
+          :class="activeTab === menu.key ? 'bg-[var(--fill-tsp-primary)] border-[var(--border-main)] text-[var(--text-primary)]' : 'bg-transparent border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--fill-tsp-gray-main)]'">
+          {{ menu.label }}
+        </button>
+      </div>
+
       <div class="px-3 mb-1 flex justify-center flex-shrink-0">
-        <button @click="handleNewTaskClick"
+        <button @click="handlePrimaryAction"
           class="ops-elevated flex min-w-[36px] w-full items-center justify-center gap-1.5 rounded-lg h-[36px] bg-[var(--Button-primary-white)] hover:bg-white/20 dark:hover:bg-black/60 cursor-pointer shadow-[0px_0.5px_3px_0px_var(--shadow-S)]">
           <Plus class="h-4 w-4 text-[var(--icon-primary)]" />
           <span class="text-sm font-medium text-[var(--text-primary)] whitespace-nowrap truncate">
-            {{ t('New Task') }}
+            {{ primaryActionLabel }}
           </span>
-          <div class="flex items-center gap-0.5">
+          <div v-if="activeTab !== 'node'" class="flex items-center gap-0.5">
             <span
               class="flex text-[var(--text-tertiary)] justify-center items-center min-w-5 h-5 px-1 rounded-[4px] bg-[var(--fill-tsp-white-light)] border border-[var(--border-light)]">
               <Command :size="14" />
@@ -47,110 +53,198 @@
           </div>
         </button>
       </div>
-      <div v-if="sessions.length > 0" class="flex flex-col flex-1 min-h-0 overflow-auto pt-2 pb-5 overflow-x-hidden">
-        <SessionItem v-for="session in sessions" :key="session.session_id" :session="session"
+
+      <div v-if="activeTab === 'node'" class="flex flex-col flex-1 min-h-0 overflow-auto pt-2 pb-5 overflow-x-hidden">
+        <button v-for="node in nodes" :key="node.node_id" @click="openNode(node.node_id)"
+          class="mx-3 mb-2 rounded-xl border p-3 text-left transition"
+          :class="isNodeActive(node.node_id) ? 'bg-[var(--background-white-main)] border-[var(--border-main)] shadow-[0_8px_20px_var(--shadow-XS)]' : 'hover:bg-[var(--fill-tsp-gray-main)] border-transparent'">
+          <div class="flex items-center justify-between">
+            <div class="text-sm font-semibold truncate text-[var(--text-primary)]">{{ node.name }}</div>
+            <span class="text-[10px] px-2 py-0.5 rounded-full"
+              :class="node.ssh_enabled ? 'bg-emerald-100 text-emerald-700' : 'bg-zinc-100 text-zinc-500'">
+              {{ node.ssh_enabled ? 'SSH ON' : 'SSH OFF' }}
+            </span>
+          </div>
+          <div class="text-xs text-[var(--text-tertiary)] truncate mt-1">
+            {{ node.description || node.remarks || '暂无描述' }}
+          </div>
+        </button>
+        <div v-if="nodes.length === 0" class="flex-1 flex items-center justify-center text-sm text-[var(--text-tertiary)] px-5 text-center">
+          还没有可用节点，点击上方“添加节点”创建。
+        </div>
+      </div>
+
+      <div v-else-if="displaySessions.length > 0" class="flex flex-col flex-1 min-h-0 overflow-auto pt-2 pb-5 overflow-x-hidden">
+        <SessionItem v-for="session in displaySessions" :key="session.session_id" :session="session"
           @deleted="handleSessionDeleted" />
       </div>
       <div v-else class="flex flex-1 flex-col items-center justify-center gap-4">
         <div class="flex flex-col items-center gap-2 text-[var(--text-tertiary)]">
           <MessageSquareDashed :size="38" />
-          <span class="text-sm font-medium">{{ t('Create a task to get started') }}</span></div>
+          <span class="text-sm font-medium">{{ emptyHint }}</span>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { PanelLeft, Plus, Command, MessageSquareDashed } from 'lucide-vue-next';
 import SessionItem from './SessionItem.vue';
 import { useLeftPanel } from '../composables/useLeftPanel';
-import { ref, onMounted, watch, onUnmounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
 import { getSessionsSSE, getSessions } from '../api/agent';
-import { ListSessionItem } from '../types/response';
+import { listServerNodes, type ServerNode } from '@/api/node';
+import { ListSessionItem, SessionStatus } from '../types/response';
 import { useI18n } from 'vue-i18n';
+import { useOpsMenu, type OpsMenuTab } from '@/composables/useOpsMenu';
+import { useSettingsDialog } from '@/composables/useSettingsDialog';
 
-const { t } = useI18n()
-const { isLeftPanelShow, toggleLeftPanel } = useLeftPanel()
-const route = useRoute()
-const router = useRouter()
+const { t } = useI18n();
+const { isLeftPanelShow, toggleLeftPanel } = useLeftPanel();
+const route = useRoute();
+const router = useRouter();
+const { activeTab, setActiveTab } = useOpsMenu();
+const { openSettingsDialog } = useSettingsDialog();
 
-const sessions = ref<ListSessionItem[]>([])
-const cancelGetSessionsSSE = ref<(() => void) | null>(null)
+const sessions = ref<ListSessionItem[]>([]);
+const nodes = ref<ServerNode[]>([]);
+const cancelGetSessionsSSE = ref<(() => void) | null>(null);
+const nodeRefreshTimer = ref<number | null>(null);
 
-// Function to fetch sessions data
+const menus: { key: OpsMenuTab; label: string }[] = [
+  { key: 'chat', label: '对话' },
+  { key: 'task', label: '任务' },
+  { key: 'node', label: '节点' },
+];
+
+const displaySessions = computed(() => {
+  if (activeTab.value === 'chat') return sessions.value;
+  return [...sessions.value].sort((a, b) => {
+    const aRunning = a.status === SessionStatus.RUNNING || a.status === SessionStatus.PENDING;
+    const bRunning = b.status === SessionStatus.RUNNING || b.status === SessionStatus.PENDING;
+    if (aRunning === bRunning) return b.created_at - a.created_at;
+    return aRunning ? -1 : 1;
+  });
+});
+
+const primaryActionLabel = computed(() => {
+  if (activeTab.value === 'node') return '添加节点';
+  return t('New Task');
+});
+
+const emptyHint = computed(() => {
+  if (activeTab.value === 'task') return '暂无任务记录';
+  return t('Create a task to get started');
+});
+
+const isNodeActive = (nodeId: string) => route.path === `/chat/nodes/${nodeId}`;
+
 const updateSessions = async () => {
   try {
-    const response = await getSessions()
-    sessions.value = response.sessions
+    const response = await getSessions();
+    sessions.value = response.sessions;
   } catch (error) {
-    console.error('Failed to fetch sessions:', error)
+    console.error('Failed to fetch sessions:', error);
   }
-}
+};
 
-// Function to fetch sessions data
 const fetchSessions = async () => {
   try {
     if (cancelGetSessionsSSE.value) {
-      cancelGetSessionsSSE.value()
-      cancelGetSessionsSSE.value = null
+      cancelGetSessionsSSE.value();
+      cancelGetSessionsSSE.value = null;
     }
     cancelGetSessionsSSE.value = await getSessionsSSE({
-      onOpen: () => {
-        console.log('Sessions SSE opened')
-      },
       onMessage: (event) => {
-        sessions.value = event.data.sessions
+        sessions.value = event.data.sessions;
       },
       onError: (error) => {
-        console.error('Failed to fetch sessions:', error)
+        console.error('Failed to fetch sessions:', error);
       },
-      onClose: () => {
-        console.log('Sessions SSE closed')
-      }
-    })
+    });
   } catch (error) {
-    console.error('Failed to fetch sessions:', error)
+    console.error('Failed to fetch sessions:', error);
   }
-}
+};
 
-const handleNewTaskClick = () => {
-  router.push('/')
-}
+const loadNodes = async () => {
+  try {
+    nodes.value = await listServerNodes();
+  } catch (error) {
+    console.error('Failed to fetch nodes:', error);
+  }
+};
+
+const handlePrimaryAction = () => {
+  if (activeTab.value === 'node') {
+    openSettingsDialog('nodes');
+    return;
+  }
+  router.push('/');
+};
+
+const switchMenu = (menu: OpsMenuTab) => {
+  setActiveTab(menu);
+  if (menu === 'node') {
+    if (!route.path.startsWith('/chat/nodes')) {
+      router.push('/chat/nodes');
+    }
+    return;
+  }
+  if (route.path.startsWith('/chat/nodes')) {
+    router.push('/chat');
+  }
+};
+
+const openNode = (nodeId: string) => {
+  setActiveTab('node');
+  router.push(`/chat/nodes/${nodeId}`);
+};
 
 const handleSessionDeleted = (sessionId: string) => {
-  console.log('handleSessionDeleted', sessionId)
-  sessions.value = sessions.value.filter(session => session.session_id !== sessionId);
-}
+  sessions.value = sessions.value.filter((session) => session.session_id !== sessionId);
+};
 
-// Handle keyboard shortcuts
 const handleKeydown = (event: KeyboardEvent) => {
-  // Check for Command + K (Mac) or Ctrl + K (Windows/Linux)
   if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
-    event.preventDefault()
-    handleNewTaskClick()
+    event.preventDefault();
+    if (activeTab.value !== 'node') {
+      router.push('/');
+    }
   }
-}
+};
+
+watch(() => route.path, async (path) => {
+  if (path.startsWith('/chat/nodes')) {
+    setActiveTab('node');
+    await loadNodes();
+  } else if (activeTab.value === 'node') {
+    setActiveTab('chat');
+  }
+  await updateSessions();
+});
 
 onMounted(async () => {
-  // Initial fetch of sessions
-  fetchSessions()
-
-  // Add keyboard event listener
-  window.addEventListener('keydown', handleKeydown)
-})
+  fetchSessions();
+  loadNodes();
+  nodeRefreshTimer.value = window.setInterval(loadNodes, 20000);
+  window.addEventListener('keydown', handleKeydown);
+  if (route.path.startsWith('/chat/nodes')) {
+    setActiveTab('node');
+  }
+});
 
 onUnmounted(() => {
   if (cancelGetSessionsSSE.value) {
-    cancelGetSessionsSSE.value()
-    cancelGetSessionsSSE.value = null
+    cancelGetSessionsSSE.value();
+    cancelGetSessionsSSE.value = null;
   }
-
-  // Remove keyboard event listener
-  window.removeEventListener('keydown', handleKeydown)
-})
-
-watch(() => route.path, async () => {
-  await updateSessions()
-})
+  if (nodeRefreshTimer.value !== null) {
+    window.clearInterval(nodeRefreshTimer.value);
+    nodeRefreshTimer.value = null;
+  }
+  window.removeEventListener('keydown', handleKeydown);
+});
 </script>

@@ -95,6 +95,34 @@ class SSHMonitorResponse(BaseModel):
     system_info: str
 
 
+class NodeOverviewMetric(BaseModel):
+    label: str
+    value: str
+    hint: Optional[str] = None
+    level: Literal["ok", "warn", "critical"] = "ok"
+
+
+class NodeOverviewResponse(BaseModel):
+    node_id: str
+    node_name: str
+    checked_at: datetime
+    status: Literal["healthy", "warning", "critical"]
+    summary: str
+    hostname: Optional[str] = None
+    os_name: Optional[str] = None
+    kernel: Optional[str] = None
+    uptime: Optional[str] = None
+    load_average: Optional[str] = None
+    memory_total: Optional[str] = None
+    memory_used: Optional[str] = None
+    memory_free: Optional[str] = None
+    disk_total: Optional[str] = None
+    disk_used: Optional[str] = None
+    disk_use_percent: Optional[int] = None
+    metrics: List[NodeOverviewMetric]
+    raw_output: str
+
+
 class SSHLogItem(BaseModel):
     log_id: str
     session_id: Optional[str]

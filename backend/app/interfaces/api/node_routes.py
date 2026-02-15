@@ -8,6 +8,8 @@ from app.interfaces.schemas.node import (
     DecideApprovalRequest,
     DecideApprovalResponse,
     ListServerNodesResponse,
+    NodeOverviewMetric,
+    NodeOverviewResponse,
     PendingApprovalListResponse,
     PendingApprovalItem,
     SSHExecRequest,
@@ -113,6 +115,37 @@ async def monitor_node(
             node_id=node.id,
             node_name=node.name,
             system_info=info,
+        )
+    )
+
+
+@router.get("/{node_id}/overview", response_model=APIResponse[NodeOverviewResponse])
+async def node_overview(
+    node_id: str,
+    current_user: User = Depends(get_current_user),
+    node_service: NodeService = Depends(get_node_service),
+) -> APIResponse[NodeOverviewResponse]:
+    overview = await node_service.get_node_overview(current_user.id, node_id)
+    return APIResponse.success(
+        NodeOverviewResponse(
+            node_id=overview["node_id"],
+            node_name=overview["node_name"],
+            checked_at=overview["checked_at"],
+            status=overview["status"],
+            summary=overview["summary"],
+            hostname=overview.get("hostname"),
+            os_name=overview.get("os_name"),
+            kernel=overview.get("kernel"),
+            uptime=overview.get("uptime"),
+            load_average=overview.get("load_average"),
+            memory_total=overview.get("memory_total"),
+            memory_used=overview.get("memory_used"),
+            memory_free=overview.get("memory_free"),
+            disk_total=overview.get("disk_total"),
+            disk_used=overview.get("disk_used"),
+            disk_use_percent=overview.get("disk_use_percent"),
+            metrics=[NodeOverviewMetric(**metric) for metric in overview.get("metrics", [])],
+            raw_output=overview.get("raw_output", ""),
         )
     )
 

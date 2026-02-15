@@ -36,6 +36,34 @@ export interface SSHMonitorResponse {
   system_info: string;
 }
 
+export interface NodeOverviewMetric {
+  label: string;
+  value: string;
+  hint?: string;
+  level: 'ok' | 'warn' | 'critical';
+}
+
+export interface NodeOverviewResponse {
+  node_id: string;
+  node_name: string;
+  checked_at: string;
+  status: 'healthy' | 'warning' | 'critical';
+  summary: string;
+  hostname?: string;
+  os_name?: string;
+  kernel?: string;
+  uptime?: string;
+  load_average?: string;
+  memory_total?: string;
+  memory_used?: string;
+  memory_free?: string;
+  disk_total?: string;
+  disk_used?: string;
+  disk_use_percent?: number;
+  metrics: NodeOverviewMetric[];
+  raw_output: string;
+}
+
 export interface SSHLogItem {
   log_id: string;
   session_id?: string;
@@ -103,6 +131,11 @@ export async function execNodeSSH(nodeId: string, command: string, execDir?: str
 
 export async function monitorNode(nodeId: string): Promise<SSHMonitorResponse> {
   const response = await apiClient.get<ApiResponse<SSHMonitorResponse>>(`/nodes/${nodeId}/monitor`);
+  return response.data.data;
+}
+
+export async function getNodeOverview(nodeId: string): Promise<NodeOverviewResponse> {
+  const response = await apiClient.get<ApiResponse<NodeOverviewResponse>>(`/nodes/${nodeId}/overview`);
   return response.data.data;
 }
 

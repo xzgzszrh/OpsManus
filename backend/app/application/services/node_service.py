@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from datetime import UTC, datetime
 import io
+import re
 from typing import Any, Dict, List, Optional
 
 from app.domain.models.node import SSHApprovalStatus, SSHCommandApproval, SSHNode, SSHOperationLog
@@ -110,6 +111,61 @@ class NodeService:
             source="monitor",
         )
         return (result.data or {}).get("output", "")
+
+    async def get_node_overview(self, user_id: str, node_id: str) -> Dict[str, Any]:
+        node = await self.get_node(user_id, node_id)
+        command = (
+            "printf 'HOSTNAME=%s\\n' \"$(hostname)\"; "
+            "printf 'OS_NAME=%s\\n' \"$(. /etc/os-release 2>/dev/null; echo ${PRETTY_NAME:-unknown})\"; "
+            "printf 'KERNEL=%s\\n' \"$(uname -r)\"; "
+            "printf 'UPTIME=%s\\n' \"$(uptime -p 2>/dev/null || uptime)\"; "
+            "printf 'LOAD_AVG=%s\\n' \"$(cat /proc/loadavg 2>/dev/null | awk '{print $1\" \"$2\" \"$3}')\"; "
+            "printf 'MEM_TOTAL_KB=%s\\n' \"$(grep MemTotal /proc/meminfo 2>/dev/null | awk '{print $2}')\"; "
+            "printf 'MEM_AVAILABLE_KB=%s\\n' \"$(grep MemAvailable /proc/meminfo 2>/dev/null | awk '{print $2}')\"; "
+            "printf 'ROOT_DISK=%s\\n' \"$(df -Pk / 2>/dev/null | tail -1 | awk '{print $2\" \"$3\" \"$5}')\""
+        )
+        result = await self.run_command(
+            user_id=user_id,
+            node_id=node_id,
+            command=command,
+            actor_type="system",
+            source="monitor",
+        )
+        raw_output = (result.data or {}).get("output", "")
+        parsed = self._parse_overview_output(raw_output)
+        metrics = self._build_overview_metrics(parsed)
+        status = "healthy"
+        if any(metric["level"] == "critical" for metric in metrics):
+            status = "critical"
+        elif any(metric["level"] == "warn" for metric in metrics):
+            status = "warning"
+
+        summary_map = {
+            "healthy": "系统运行状态良好，关键指标处于安全区间。",
+            "warning": "系统存在需要关注的资源压力，建议继续观察或优化。",
+            "critical": "系统资源压力较高，建议尽快排查并处理。",
+        }
+
+        return {
+            "node_id": node.id,
+            "node_name": node.name,
+            "checked_at": datetime.now(UTC),
+            "status": status,
+            "summary": summary_map[status],
+            "hostname": parsed.get("HOSTNAME"),
+            "os_name": parsed.get("OS_NAME"),
+            "kernel": parsed.get("KERNEL"),
+            "uptime": parsed.get("UPTIME"),
+            "load_average": parsed.get("LOAD_AVG"),
+            "memory_total": self._format_kb_to_human(parsed.get("MEM_TOTAL_KB")),
+            "memory_used": self._format_kb_to_human(self._memory_used_kb(parsed)),
+            "memory_free": self._format_kb_to_human(parsed.get("MEM_AVAILABLE_KB")),
+            "disk_total": self._format_kb_to_human(self._disk_total_kb(parsed)),
+            "disk_used": self._format_kb_to_human(self._disk_used_kb(parsed)),
+            "disk_use_percent": self._disk_percent(parsed),
+            "metrics": metrics,
+            "raw_output": raw_output,
+        }
 
     async def list_logs(self, user_id: str, node_id: str, limit: int = 100) -> List[SSHOperationLog]:
         await self.get_node(user_id, node_id)
@@ -316,3 +372,131 @@ class NodeService:
                 client.close()
 
         return await asyncio.to_thread(_blocking_exec)
+
+    @staticmethod
+    def _parse_overview_output(raw_output: str) -> Dict[str, str]:
+        parsed: Dict[str, str] = {}
+        for line in raw_output.splitlines():
+            if "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip()
+            if key:
+                parsed[key] = value
+        return parsed
+
+    @staticmethod
+    def _to_int(value: Optional[str]) -> Optional[int]:
+        if not value:
+            return None
+        match = re.search(r"\d+", value)
+        if not match:
+            return None
+        try:
+            return int(match.group(0))
+        except ValueError:
+            return None
+
+    def _disk_total_kb(self, parsed: Dict[str, str]) -> Optional[int]:
+        root_disk = parsed.get("ROOT_DISK", "")
+        parts = root_disk.split()
+        if len(parts) < 2:
+            return None
+        return self._to_int(parts[0])
+
+    def _disk_used_kb(self, parsed: Dict[str, str]) -> Optional[int]:
+        root_disk = parsed.get("ROOT_DISK", "")
+        parts = root_disk.split()
+        if len(parts) < 2:
+            return None
+        return self._to_int(parts[1])
+
+    def _disk_percent(self, parsed: Dict[str, str]) -> Optional[int]:
+        root_disk = parsed.get("ROOT_DISK", "")
+        parts = root_disk.split()
+        if len(parts) < 3:
+            return None
+        return self._to_int(parts[2])
+
+    def _memory_used_kb(self, parsed: Dict[str, str]) -> Optional[int]:
+        total = self._to_int(parsed.get("MEM_TOTAL_KB"))
+        available = self._to_int(parsed.get("MEM_AVAILABLE_KB"))
+        if total is None or available is None:
+            return None
+        used = total - available
+        return used if used >= 0 else None
+
+    @staticmethod
+    def _format_kb_to_human(value: Optional[int]) -> Optional[str]:
+        if value is None:
+            return None
+        size = float(value) * 1024.0
+        units = ["B", "KB", "MB", "GB", "TB"]
+        unit_index = 0
+        while size >= 1024 and unit_index < len(units) - 1:
+            size /= 1024.0
+            unit_index += 1
+        if unit_index == 0:
+            return f"{int(size)}{units[unit_index]}"
+        return f"{size:.1f}{units[unit_index]}"
+
+    def _build_overview_metrics(self, parsed: Dict[str, str]) -> List[Dict[str, str]]:
+        metrics: List[Dict[str, str]] = []
+
+        load_avg = parsed.get("LOAD_AVG") or "-"
+        load_level = "ok"
+        try:
+            first_load = float(load_avg.split()[0])
+            if first_load >= 4:
+                load_level = "critical"
+            elif first_load >= 2:
+                load_level = "warn"
+        except Exception:
+            load_level = "warn"
+        metrics.append({
+            "label": "CPU 负载",
+            "value": load_avg,
+            "hint": "1m / 5m / 15m",
+            "level": load_level,
+        })
+
+        total_mem = self._to_int(parsed.get("MEM_TOTAL_KB"))
+        used_mem = self._memory_used_kb(parsed)
+        mem_percent = None
+        if total_mem and used_mem is not None and total_mem > 0:
+            mem_percent = int((used_mem / total_mem) * 100)
+        mem_level = "ok"
+        if mem_percent is not None:
+            if mem_percent >= 90:
+                mem_level = "critical"
+            elif mem_percent >= 75:
+                mem_level = "warn"
+        metrics.append({
+            "label": "内存使用",
+            "value": f"{mem_percent}%" if mem_percent is not None else "-",
+            "hint": f"{self._format_kb_to_human(used_mem) or '-'} / {self._format_kb_to_human(total_mem) or '-'}",
+            "level": mem_level,
+        })
+
+        disk_percent = self._disk_percent(parsed)
+        disk_level = "ok"
+        if disk_percent is not None:
+            if disk_percent >= 90:
+                disk_level = "critical"
+            elif disk_percent >= 75:
+                disk_level = "warn"
+        metrics.append({
+            "label": "磁盘使用(/)",
+            "value": f"{disk_percent}%" if disk_percent is not None else "-",
+            "hint": f"{self._format_kb_to_human(self._disk_used_kb(parsed)) or '-'} / {self._format_kb_to_human(self._disk_total_kb(parsed)) or '-'}",
+            "level": disk_level,
+        })
+
+        metrics.append({
+            "label": "在线时长",
+            "value": parsed.get("UPTIME", "-"),
+            "hint": "从系统最近一次启动到当前",
+            "level": "ok",
+        })
+        return metrics
