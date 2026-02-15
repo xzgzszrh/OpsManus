@@ -6,9 +6,15 @@
       'width: 24px; transition: width 0.36s cubic-bezier(0.4, 0, 0.2, 1);'">
     <div
       :class="isLeftPanelShow ?
-        'flex flex-col overflow-hidden bg-[var(--background-nav)] h-full opacity-100 translate-x-0' :
-        'flex flex-col overflow-hidden bg-[var(--background-nav)] fixed top-1 start-1 bottom-1 z-[1] border-1 dark:border-[1px] border-[var(--border-main)] dark:border-[var(--border-light)] rounded-xl shadow-[0px_8px_32px_0px_rgba(0,0,0,0.16),0px_0px_0px_1px_rgba(0,0,0,0.06)] opacity-0 pointer-events-none -translate-x-10'"
+        'ops-panel ops-slide-up flex flex-col overflow-hidden bg-[var(--background-nav)] h-full opacity-100 translate-x-0 border-r border-[var(--border-main)]' :
+        'ops-panel ops-slide-up flex flex-col overflow-hidden bg-[var(--background-nav)] fixed top-1 start-1 bottom-1 z-[1] border-1 dark:border-[1px] border-[var(--border-main)] dark:border-[var(--border-light)] rounded-xl shadow-[0px_8px_32px_0px_rgba(0,0,0,0.16),0px_0px_0px_1px_rgba(0,0,0,0.06)] opacity-0 pointer-events-none -translate-x-10'"
       :style="(isLeftPanelShow ? 'width: 300px;' : 'width: 0px;') + ' transition: opacity 0.2s, transform 0.2s, width 0.2s;'">
+      <div class="px-3 pt-3 pb-1">
+        <div class="rounded-xl border border-[var(--border-main)] px-3 py-2 bg-[var(--background-card)]/70">
+          <div class="text-[11px] uppercase tracking-[0.16em] text-[var(--text-tertiary)]">Ops Console</div>
+          <div class="text-sm font-semibold text-[var(--text-primary)] mt-0.5">服务器运维控制台</div>
+        </div>
+      </div>
       <div class="flex">
         <div class="flex items-center px-3 py-3 flex-row h-[52px] gap-1 justify-end w-full">
           <div class="flex justify-between w-full px-1 pt-2">
@@ -24,7 +30,7 @@
       </div>
       <div class="px-3 mb-1 flex justify-center flex-shrink-0">
         <button @click="handleNewTaskClick"
-          class="flex min-w-[36px] w-full items-center justify-center gap-1.5 rounded-lg h-[32px] bg-[var(--Button-primary-white)] hover:bg-white/20 dark:hover:bg-black/60 cursor-pointer shadow-[0px_0.5px_3px_0px_var(--shadow-S)]">
+          class="ops-elevated flex min-w-[36px] w-full items-center justify-center gap-1.5 rounded-lg h-[36px] bg-[var(--Button-primary-white)] hover:bg-white/20 dark:hover:bg-black/60 cursor-pointer shadow-[0px_0.5px_3px_0px_var(--shadow-S)]">
           <Plus class="h-4 w-4 text-[var(--icon-primary)]" />
           <span class="text-sm font-medium text-[var(--text-primary)] whitespace-nowrap truncate">
             {{ t('New Task') }}

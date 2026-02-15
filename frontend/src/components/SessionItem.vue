@@ -1,8 +1,8 @@
 <template>
   <div class="px-2">
     <div @click="handleSessionClick"
-      class="group flex h-14 cursor-pointer items-center gap-2 rounded-[10px] px-2 transition-colors"
-      :class="isCurrentSession ? 'bg-[var(--background-white-main)]' : 'hover:bg-[var(--fill-tsp-gray-main)]'">
+      class="group flex h-14 cursor-pointer items-center gap-2 rounded-[10px] px-2 transition-all border border-transparent"
+      :class="isCurrentSession ? 'bg-[var(--background-white-main)] border-[var(--border-main)] shadow-[0_8px_20px_var(--shadow-XS)]' : 'hover:bg-[var(--fill-tsp-gray-main)] hover:border-[var(--border-light)]'">
       <div class="relative">
         <div class="h-8 w-8 rounded-full flex items-center justify-center relative bg-[var(--fill-tsp-white-dark)]">
           <div class="relative h-4 w-4 object-cover brightness-0 opacity-75 dark:opacity-100 dark:brightness-100">

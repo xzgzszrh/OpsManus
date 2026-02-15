@@ -1,8 +1,8 @@
 <template>
-  <div className="h-screen flex overflow-hidden bg-white">
+  <div className="ops-shell h-screen flex overflow-hidden">
     <LeftPanel />
-    <div className="flex-1 min-w-0 h-full py-0 pr-0 relative">
-      <div className="flex h-full bg-[var(--background-gray-main)]">
+    <div className="flex-1 min-w-0 h-full py-0 pr-0 relative z-[1]">
+      <div className="flex h-full bg-[var(--background-gray-main)]/45">
         <div class="flex flex-1 min-w-0 min-h-0">
           <router-view />
           <FilePanel />
