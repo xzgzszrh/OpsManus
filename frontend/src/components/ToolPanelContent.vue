@@ -56,7 +56,7 @@ const props = defineProps<{
 
 const { toolInfo } = useToolInfo(toRef(props, 'toolContent'));
 const panelTitle = computed(() => {
-  if (props.toolContent?.name !== 'ssh') return 'Manus Computer';
+  if (props.toolContent?.name !== 'ssh') return 'BoringCopliot Computer';
   return props.toolContent?.content?.node_name
     || props.toolContent?.content?.node_id
     || props.toolContent?.args?.node_id

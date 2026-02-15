@@ -13,7 +13,7 @@
             </div>
             <div class="flex">
               <Bot :size="30" />
-              <ManusLogoTextIcon />
+              <span class="text-[var(--text-primary)] text-[20px] font-semibold tracking-[0.02em] leading-[30px]">BoringCopliot</span>
             </div>
           </div>
           <div class="flex items-center gap-2">
@@ -76,7 +76,6 @@ import ChatBox from '../components/ChatBox.vue';
 import { createSession } from '../api/agent';
 import { showErrorToast } from '../utils/toast';
 import { Bot, PanelLeft, Github } from 'lucide-vue-next';
-import ManusLogoTextIcon from '../components/icons/ManusLogoTextIcon.vue';
 import type { FileInfo } from '../api/file';
 import { useLeftPanel } from '../composables/useLeftPanel';
 import { useFilePanel } from '../composables/useFilePanel';

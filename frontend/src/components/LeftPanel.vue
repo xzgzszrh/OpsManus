@@ -16,22 +16,19 @@
         </div>
       </div>
 
-      <div class="flex items-center px-3 py-3 h-[52px]">
-        <div class="flex justify-between w-full px-1 pt-2">
-          <div
-            class="flex h-7 w-7 items-center justify-center cursor-pointer hover:bg-[var(--fill-tsp-gray-main)] rounded-md"
-            @click="toggleLeftPanel">
-            <PanelLeft class="h-5 w-5 text-[var(--icon-secondary)]" />
-          </div>
-        </div>
-      </div>
-
-      <div class="px-3 flex items-center gap-1 mb-2">
-        <button v-for="menu in menus" :key="menu.key" @click="switchMenu(menu.key)"
-          class="flex-1 h-8 rounded-lg text-sm border"
-          :class="activeTab === menu.key ? 'bg-[var(--fill-tsp-primary)] border-[var(--border-main)] text-[var(--text-primary)]' : 'bg-transparent border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--fill-tsp-gray-main)]'">
-          {{ menu.label }}
+      <div class="px-3 py-2 mb-2 flex items-center gap-2">
+        <button
+          class="flex h-8 w-8 shrink-0 items-center justify-center cursor-pointer hover:bg-[var(--fill-tsp-gray-main)] rounded-md border border-transparent hover:border-[var(--border-main)]"
+          @click="toggleLeftPanel">
+          <PanelLeft class="h-5 w-5 text-[var(--icon-secondary)]" />
         </button>
+        <div class="flex items-center gap-1 flex-1 min-w-0">
+          <button v-for="menu in menus" :key="menu.key" @click="switchMenu(menu.key)"
+            class="flex-1 h-8 rounded-lg text-sm border"
+            :class="activeTab === menu.key ? 'bg-[var(--fill-tsp-primary)] border-[var(--border-main)] text-[var(--text-primary)]' : 'bg-transparent border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--fill-tsp-gray-main)]'">
+            {{ menu.label }}
+          </button>
+        </div>
       </div>
 
       <div class="px-3 mb-1 flex justify-center flex-shrink-0">
