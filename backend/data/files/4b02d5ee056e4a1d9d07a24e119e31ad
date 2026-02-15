@@ -1,0 +1,36 @@
+=== 第 10 页 ===
+
+5301ELE and 5401ELE
+Part D
+Question D.1
+(a) ABC Home appliances Ltd. is planning to automate their electrical appliance assembly
+line. The assembly line must be automated and optimised to real-time in order to
+maximise production. Should the decision makers choose general purpose
+microprocessors or microcontrollers for this set up? Justify your answer.
+[8 Marks]
+They must choose microcontrollers (example, PIC) for the above set up. Microcontrollers
+employ Harvard architecture. The features include,
+• Code and data memory on separate buses, so the operations are more efficient
+• Program memory bus is wide enough to fetch complete instruction each cycle
+• Instructions and data can be fetched simultaneously
+• Next instruction may be fetched at the same time as current one is executed
+(pipelining)
+All these will enable to efficiently implement the assembly line to give real-time operations.
+(b) Discuss the rationale for your answer for the above question based on the following:
+i) Draw the architecture of the microprocessor/controller chosen for the system
+and discuss its suitability for the application. [9 Marks]
+Fig Harvard architecture for microcontrollers
+Some discussion around the suitability will incur up to 9 marks.
+ii) Suitability of the processor design for the system. [8 Marks]
+Harvard architecture uses Reduced Instruction Set Computing (RISC) for its design. The
+features are:
+• Very few instructions
+• Simple operations
+• Short (single-byte)
+• Most execute in a single clock cycle
+• Mainly orthogonal (all registers accessed in the same way)
+• Fewer instructions mean instruction set can be learnt very quickly
+• Complex tasks need multiple instructions (e.g. multiply)
+• Hardware connection based
+Some discussion around how these features make it more suitable will incur up to 8 marks.
+January 2023 Page 10 of 13

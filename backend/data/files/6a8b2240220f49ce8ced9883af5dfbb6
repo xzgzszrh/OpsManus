@@ -1,0 +1,19 @@
+=== 第 13 页 ===
+
+5301ELE and 5401ELE
+If the data ready signal from some external device is connected to an input port on the
+computer, then a program loop could be written which would test this line repeatedly until the
+data ready signal was found to be asserted. If a number of I/O devices were connected, then
+the program loop could test each device in turn looking for a data ready signal being asserted.
+Such a technique is known as polling. The disadvantage of polled I/O is that it is a tremendous
+waste of time ie. while the computer is continually checking for a data ready line it cannot be
+doing other tasks. [4 marks]
+However, the data ready line could be connected to an interrupt input on the processor. The
+processor could then be busy doing other tasks until it is interrupted by a data ready signal
+from the external device. Since different devices need the processor's attention at differing
+rates; the mouse needs attention far less frequently than say, the hard disk (when it is actively
+transferring data) then interrupts are a much more efficient use of the processors time. [4
+Marks]
+In terms of time taken and hence consumption will increase exponentially (Moore’s law) for
+polling with increasing number of devices to interface. [1 Mark]
+January 2023 Page 13 of 13

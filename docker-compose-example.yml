@@ -15,9 +15,11 @@ services:
     image: simpleyyt/manus-backend
     depends_on:
       - sandbox
+      - redis
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - backend_data:/app/data
       #- ./mcp.json:/etc/mcp.json # Mount MCP servers directory
     networks:
       - manus-network
@@ -33,14 +35,10 @@ services:
       # Maximum tokens for LLM response
       - MAX_TOKENS=2000
 
-      # MongoDB connection URI
-      #- MONGODB_URI=mongodb://mongodb:27017
-      # MongoDB database name
-      #- MONGODB_DATABASE=manus
-      # MongoDB username (optional)
-      #- MONGODB_USERNAME=
-      # MongoDB password (optional)
-      #- MONGODB_PASSWORD=
+      # SQLite database path
+      #- SQLITE_PATH=/app/data/manus.db
+      # Local file storage path
+      #- FILE_STORAGE_PATH=/app/data/files
 
       # Redis server hostname
       #- REDIS_HOST=redis
@@ -80,15 +78,15 @@ services:
 
       # Auth configuration
       # Options: password, none, local
-      - AUTH_PROVIDER=password
+      - AUTH_PROVIDER=local
 
       # Password auth configuration, only used when AUTH_PROVIDER=password
       - PASSWORD_SALT=
       - PASSWORD_HASH_ROUNDS=10
 
       # Local auth configuration, only used when AUTH_PROVIDER=local
-      #- LOCAL_AUTH_EMAIL=admin@example.com
-      #- LOCAL_AUTH_PASSWORD=admin
+      # Format: username1:password1,username2:password2
+      - LOCAL_AUTH_ACCOUNTS=admin:admin123
 
       # JWT configuration
       - JWT_SECRET_KEY=your-secret-key-here
@@ -117,16 +115,6 @@ services:
     networks:
       - manus-network
 
-  mongodb:
-    image: mongo:7.0
-    volumes:
-      - mongodb_data:/data/db
-    restart: unless-stopped
-    #ports:
-    #  - "27017:27017"
-    networks:
-      - manus-network
-
   redis:
     image: redis:7.0
     restart: unless-stopped
@@ -134,8 +122,8 @@ services:
       - manus-network
 
 volumes:
-  mongodb_data:
-    name: manus-mongodb-data
+  backend_data:
+    name: manus-backend-data
 
 networks:
   manus-network:

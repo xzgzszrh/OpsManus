@@ -34,7 +34,7 @@ async def login(
 ) -> APIResponse[LoginResponse]:
     """User login endpoint"""
     # Authenticate user and get tokens
-    auth_result = await auth_service.login_with_tokens(request.email, request.password)
+    auth_result = await auth_service.login_with_tokens(request.username, request.password)
     
     # Return success response with tokens
     return APIResponse.success(LoginResponse(

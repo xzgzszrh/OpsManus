@@ -1,26 +1,25 @@
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+from pathlib import Path
 
 
 class Settings(BaseSettings):
     
     # Model provider configuration
     api_key: str | None = None
-    api_base: str = "https://api.deepseek.com/v1"
+    api_base: str = "https://open.bigmodel.cn/api/coding/paas/v4"
     
     # Model configuration
-    model_name: str = "deepseek-chat"
+    model_name: str = "glm-4.7"
     temperature: float = 0.7
-    max_tokens: int = 2000
+    max_tokens: int = 4096
     
-    # MongoDB configuration
-    mongodb_uri: str = "mongodb://mongodb:27017"
-    mongodb_database: str = "manus"
-    mongodb_username: str | None = None
-    mongodb_password: str | None = None
+    # SQLite configuration
+    sqlite_path: str = "data/manus.db"
+    file_storage_path: str = "data/files"
     
     # Redis configuration
-    redis_host: str = "redis"
+    redis_host: str = "127.0.0.1"
     redis_port: int = 6379
     redis_db: int = 0
     redis_password: str | None = None
@@ -42,12 +41,13 @@ class Settings(BaseSettings):
     google_search_engine_id: str | None = None
     
     # Auth configuration
-    auth_provider: str = "password"  # "password", "none", "local"
+    auth_provider: str = "local"  # "password", "none", "local"
     password_salt: str | None = None
     password_hash_rounds: int = 10
     password_hash_algorithm: str = "pbkdf2_sha256"
-    local_auth_email: str = "admin@example.com"
-    local_auth_password: str = "admin"
+    local_auth_email: str = "admin"
+    local_auth_password: str = "admin123"
+    local_auth_accounts: str | None = None  # format: user1:pass1,user2:pass2
     
     # Email configuration
     email_host: str | None = None  # "smtp.gmail.com"
@@ -80,6 +80,7 @@ class Settings(BaseSettings):
 @lru_cache()
 def get_settings() -> Settings:
     """Get application settings"""
-    settings = Settings()
+    project_root_env = Path(__file__).resolve().parents[3] / ".env"
+    settings = Settings(_env_file=(str(project_root_env), ".env"))
     settings.validate()
     return settings 

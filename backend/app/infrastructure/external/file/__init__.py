@@ -1,5 +1,5 @@
-"""文件存储基础设施模块"""
+"""File storage infrastructure module."""
 
-from .gridfsfile import GridFSFileStorage
+from .localfile import LocalFileStorage
 
-__all__ = ["GridFSFileStorage"] 
+__all__ = ["LocalFileStorage"]

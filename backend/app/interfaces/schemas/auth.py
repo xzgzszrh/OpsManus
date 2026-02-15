@@ -1,20 +1,20 @@
 from typing import Optional
-from pydantic import BaseModel, field_validator
+from pydantic import AliasChoices, BaseModel, Field, field_validator
 from datetime import datetime
 from app.domain.models.user import UserRole
 
 
 class LoginRequest(BaseModel):
     """Login request schema"""
-    email: str
+    username: str = Field(validation_alias=AliasChoices("username", "email"))
     password: str
     
-    @field_validator('email')
+    @field_validator('username')
     @classmethod
-    def validate_email(cls, v):
-        if not v or '@' not in v:
-            raise ValueError("Valid email is required")
-        return v.strip().lower()
+    def validate_username(cls, v):
+        if not v or len(v.strip()) < 2:
+            raise ValueError("Valid username is required")
+        return v.strip()
     
     @field_validator('password')
     @classmethod

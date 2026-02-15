@@ -1,0 +1,45 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+import pdfplumber
+import json
+
+pdf_path = "/home/ubuntu/upload/23-24-5522usst-espae-exam-solutions.pdf"
+
+print(f"正在读取PDF文件: {pdf_path}")
+
+all_content = []
+
+try:
+    with pdfplumber.open(pdf_path) as pdf:
+        print(f"PDF总页数: {len(pdf.pages)}")
+        
+        for page_num, page in enumerate(pdf.pages):
+            print(f"\n正在处理第 {page_num + 1} 页...")
+            text = page.extract_text()
+            
+            if text:
+                all_content.append({
+                    "page": page_num + 1,
+                    "content": text
+                })
+                # 保存每一页内容到文件
+                with open(f"/home/ubuntu/page_{page_num + 1}.txt", "w", encoding="utf-8") as f:
+                    f.write(f"=== 第 {page_num + 1} 页 ===\n\n")
+                    f.write(text)
+                print(f"第 {page_num + 1} 页内容已保存到 page_{page_num + 1}.txt")
+            else:
+                print(f"第 {page_num + 1} 页没有提取到文本内容")
+
+except Exception as e:
+    print(f"读取PDF时出错: {str(e)}")
+
+# 合并所有内容到一个文件
+with open("/home/ubuntu/all_pages_content.txt", "w", encoding="utf-8") as f:
+    for item in all_content:
+        f.write(f"\n\n{'='*60}\n")
+        f.write(f"第 {item['page']} 页\n")
+        f.write(f"{'='*60}\n\n")
+        f.write(item['content'])
+
+print(f"\n所有内容已合并保存到 /home/ubuntu/all_pages_content.txt")
+print(f"总共处理了 {len(all_content)} 页")

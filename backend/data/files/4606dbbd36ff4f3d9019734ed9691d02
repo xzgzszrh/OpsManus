@@ -1,0 +1,386 @@
+
+
+============================================================
+第 1 页
+============================================================
+
+5301ELE and 5401ELE
+27
+Department of Electrical & Electronics Engineering
+5301ELE Digital & Embedded Systems
+and
+5401ELE Embedded Systems Programming and
+Applications in the Environment
+Date: January 2023
+Time Allowed: 2 Hours
+Instructions to candidates:
+The front page of the exam answer book and the attendance slip must be completed before
+work is commenced. Any additional stationery used must be clearly identifiable.
+This paper consists of FOUR parts (A, B, C, & D), all of which should be completed. Read
+the instructions carefully before attempting each part.
+Each part carries a different number of marks as indicated.
+The majority of marks are awarded for method and so all calculation steps should be shown.
+You should allocate an appropriate amount of time to each part, based upon the number of
+marks available.
+Reminder of exam regulations:
+Calculators that have text storage facilities are not allowed.
+No written materials except for those provided are allowed.
+Any form of communication with other candidates is strictly prohibited.
+The following materials are provided: NONE
+Examiner:
+Dr Princy Johnson
+January 2023 Page 1 of 13
+
+============================================================
+第 2 页
+============================================================
+
+5301ELE and 5401ELE
+Part A
+Problem scenario
+Develop a simple automated safety system for operating the relief valve in a high-pressure
+vessel. When the pressure exceeds the safety threshold value, this will set the pressure
+sensor ON which is connected to the input port of a microcontroller. The relief valve itself is
+connected to the output of the microcontroller. The safety system should work as described
+below:
+i) The pressure sensor is connected to Port B, bit 3 of the microcontroller.
+ii) The relief valve is connected to Port A, bits 1 and 2 of the microcontroller.
+iii) When the pressure in the vessel exceeds the threshold value, the pressure
+sensor sets the input Port B, bit 3 to ON.
+iv) When the sensor is ON, the microcontroller sends an appropriate output to Port
+A in order to open the relief valve.
+v) As soon as the pressure sensor goes to the OFF state, the microcontroller clears
+all the output port bits thus closing the relief valve.
+Question A.1
+A flowchart can be used to describe the step-by-step plan for solving a problem before
+implementing it using a computer program. Draw a flowchart to show your plan in order to
+implement the above problem, using a PIC microcontroller. [15 Marks]
+January 2023 Page 2 of 13
+
+============================================================
+第 3 页
+============================================================
+
+5301ELE and 5401ELE
+Question A.2
+(a) This safety system could be designed purely using a sequential logic circuit instead of
+employing a microcontroller. For example, the output of the pressure sensor could be
+compared to a threshold value at a threshold comparator, which could then be used to
+feed a D flipflop. If the state diagram for this action is as given in figure QA.2, develop
+the state table for the next states of the D f/f, and derive the input/output equations
+based on the table. [10 Marks]
+Choosing the D F/F, the state table, input/output equations can be developed as below.
+(b) Draw the sequential circuit diagram from the input and output equations using a D-
+flipflop. Is this a Mealy or Moore machine? [5 Marks]
+The sequential circuit consists of one D F/F with x as input and y as output. As the output
+depends only on the F/F state (and not the inputs), this is a Moore machine.
+January 2023 Page 3 of 13
+
+============================================================
+第 4 页
+============================================================
+
+5301ELE and 5401ELE
+Part B
+Question B.1
+(a) Find the State Transition Table and State Diagram for the sequential logic circuit shown
+in Fig. QB.1. X is an input and Y is an output. [10 Marks]
+Answer:
+F/F input equations:
+J = X’; K = X⨁B
+A A
+J = A; K = X’·A
+B B
+Output equation: Y = B.A’
+State transition table
+Present Inputs to F/F Next state
+state X = 0 X = 1 X = 0 X = 1 Output
+B A J K J K J K J K B+ A+ B+ A+ Y
+B B A A B B A A
+0 0 0 0 1 0 0 0 0 1 0 1 0 0 0
+0 1 1 1 1 0 1 0 0 1 1 1 1 0 0
+1 0 0 0 1 1 0 0 0 0 1 1 1 0 1
+1 1 1 1 1 1 1 0 0 0 0 0 1 1 0
+State diagram
+B A State
+0 0 S
+0
+0 1 S
+1
+1 0 S
+2
+1 1 S
+3
+January 2023 Page 4 of 13
+
+============================================================
+第 5 页
+============================================================
+
+5301ELE and 5401ELE
+Question B.2
+(a) If the Program counter in a PIC Microcontroller, is 12-bit wide, what would be the
+maximum number of program memory locations this Program counter could address
+using linear addressing? [2 Marks]
+As the Program Counter takes the processor through the program instructions by indicating
+the next instruction to be fetched, a 12-bit wide Program Counter could address 212=4096 (=4K)
+of memory space. This is true only for linear addressing. However, in the general purpose
+processor environment, pagination is used in conjunction with addressing.
+(b) If only the first 4K program memory space is implemented in a PIC microcontroller,
+what is the address range of this memory space? Give the value using hexadecimal
+number systems. [3 Marks]
+Since it is given that the first 4K of the program memory space is implemented, it could be
+safely assumed that the first address would start at 0000h in hexadecimal. Hence, the
+address will span from 0 to 4095 locations. Therefore, the hexadecimal equivalent of 4095
+is 0FFFh. So, the address range is 0000h to 0FFFh.
+(c) The address of the last location of a given 4K (4096) - byte memory block is CEE0 h.
+What would be the starting address of that memory block? [5 Marks]
+In order to find the address of the first location of an 4K memory block, (8192-1) number
+10
+of locations has to be subtracted from the last address. This could be done in one of many
+ways.
+CEE0h-4096 = CEE0h-0FFFh = BEE1h+1 = BEE2h is the address of the first location
+10
+(or)
+1 less than 4K memory locations = 0FFE h, so subtracting this value from the end address,
+gives CEE0 h - 0FFEh = BEE2 h.
+Part C
+Question C.1
+Design a synchronous sequential logic circuit that will detect a defined serial pattern appearing
+on a single data input. The circuit has a single output which is a ‘1’ when the serial input
+sequence 1101 (x x x x ) is detected. Design the circuit using D flip-flops.
+0 1 2 3
+(a) Draw the state diagram. [5 Marks]
+(b) Develop the state table by assigning binary codes for the states. [5 Marks]
+(c) Write the input/output equations from the state table. [3 Marks]
+(d) Derive the simplified Boolean expressions using map reduction. [4 Marks]
+January 2023 Page 5 of 13
+
+============================================================
+第 6 页
+============================================================
+
+5301ELE and 5401ELE
+(e) Draw the sequential circuit diagram representation of the Boolean expressions using
+D flip-flop input and output equations. [6 Marks]
+(f) Is this a Mealy or Moore machine model? Justify your answer. [2 Marks]
+January 2023 Page 6 of 13
+
+============================================================
+第 7 页
+============================================================
+
+5301ELE and 5401ELE
+f) This is a Moore finite state machine model since the output depends only on the present
+states of the flip-flops.
+Each of the above steps will get appropriate marks as allocated for each section.
+Question C.2
+(a) Starting from state 00 in the state diagram of Fig. QC.2, determine the state
+transitions and output sequence that will be generated when an input sequence of
+010110101010110 is applied. Show the state table. [5 Marks]
+January 2023 Page 7 of 13
+
+============================================================
+第 8 页
+============================================================
+
+5301ELE and 5401ELE
+Fig QC.2 State diagram
+Starting from state 00
+State 00 00 01 00 01 11 00 01 00 01 00 01 00 01 11 00
+Input 0 1 0 1 1 0 1 0 1 0 1 0 1 1 0
+Output 0 0 1 0 0 1 0 1 0 1 0 1 0 0 1
+(b) Using ‘state reduction’ technique, reduce the number of states in the following table
+and tabulate the reduced state table. Draw the state diagrams for both the original
+and reduced state tables and compare the result. [12 Marks]
+State diagram for 2the given state table.
+Fig. state diagram for table QC.2
+Applying the state reduction procedure as below, we replace the redundant states with their
+equivalent.
+Hence,
+January 2023 Page 8 of 13
+
+============================================================
+第 9 页
+============================================================
+
+5301ELE and 5401ELE
+The reduced state diagram
+(c) Verify that the equivalent circuit represented by the reduced state table/diagram
+produces the same output sequence as the original circuit (represented by the state
+table QC.2), for the input sequence 01011110100. [8 Marks]
+Writing the output and state sequence for the original state table/diagram, starting from a:
+State a f b d a f b c f b d g
+Input 0 1 0 1 0 1 1 0 1 0 0
+Output 0 1 0 0 0 1 0 0 1 0 1
+Writing the same for the reduced state table/diagram, starting a
+State a f b d a f b a f b d g
+Input 0 1 0 1 0 1 1 0 1 0 0
+Output 0 1 0 0 0 1 0 0 1 0 1
+We can see both sequences produce the same output sequence for the given input sequence.
+When the next state ‘c’ in the original sequence is replaced by ‘a’, the state sequence become
+the same too.
+January 2023 Page 9 of 13
+
+============================================================
+第 10 页
+============================================================
+
+5301ELE and 5401ELE
+Part D
+Question D.1
+(a) ABC Home appliances Ltd. is planning to automate their electrical appliance assembly
+line. The assembly line must be automated and optimised to real-time in order to
+maximise production. Should the decision makers choose general purpose
+microprocessors or microcontrollers for this set up? Justify your answer.
+[8 Marks]
+They must choose microcontrollers (example, PIC) for the above set up. Microcontrollers
+employ Harvard architecture. The features include,
+• Code and data memory on separate buses, so the operations are more efficient
+• Program memory bus is wide enough to fetch complete instruction each cycle
+• Instructions and data can be fetched simultaneously
+• Next instruction may be fetched at the same time as current one is executed
+(pipelining)
+All these will enable to efficiently implement the assembly line to give real-time operations.
+(b) Discuss the rationale for your answer for the above question based on the following:
+i) Draw the architecture of the microprocessor/controller chosen for the system
+and discuss its suitability for the application. [9 Marks]
+Fig Harvard architecture for microcontrollers
+Some discussion around the suitability will incur up to 9 marks.
+ii) Suitability of the processor design for the system. [8 Marks]
+Harvard architecture uses Reduced Instruction Set Computing (RISC) for its design. The
+features are:
+• Very few instructions
+• Simple operations
+• Short (single-byte)
+• Most execute in a single clock cycle
+• Mainly orthogonal (all registers accessed in the same way)
+• Fewer instructions mean instruction set can be learnt very quickly
+• Complex tasks need multiple instructions (e.g. multiply)
+• Hardware connection based
+Some discussion around how these features make it more suitable will incur up to 8 marks.
+January 2023 Page 10 of 13
+
+============================================================
+第 11 页
+============================================================
+
+5301ELE and 5401ELE
+Question D.2
+(a) What do you understand by the term ‘pipelining’ in the context of handling and
+arithmetic operations in RISC design strategy? Discuss three of the potential hazards
+associated with instruction pipelining and the options for mitigation. [8 Marks]
+Pipelining is an important parallel processing concept – arithmetic sub operations or phases
+of instruction cycle overlap in execution. It is viewed as the collection of segments through
+which binary information flows.
+Instruction pipelining:
+The four stages in a simple example of an instruction pipeline are:
+1. F - fetch. The instruction is fetched into the CPU
+2. D - decode. The instruction is decoded. If necessary, the registers are accessed for
+operands.
+3. E - execute. The instruction is executed.
+4. W - write back. The result of the execution is written back i.e. stored.
+Issues:
+(i) Structural Hazard: hardware cannot support all possible combinations in different pipeline
+stages e.g. stage W for i and F for i+3
+Effects alleviated by replication of resources, e.g. dual cache, multiple internal buses etc.,
+(ii) Data Hazard : when an instruction depends on the results of a previous instruction
+Solution to stall pipeline to ensure most recent data is used
+e.g. ADD EBX, ECX
+SUB EDX, EBX
+Cycle: 1 2 3 4 5
+ADD F D E W
+New EBX cal. Stored here
+SUB F D E W
+EBX read
+(iii) Issues: stall pipeline
+Cycle 1 2 3 4 5 6 7
+ADD F D E W
+SUB F ST ST D E W
+More sophisticated solution: forwarding – new value of EBX – calculated in cycle 3 but
+forwarded to ALU input as an operand for the subsequent operation
+Control Hazard - Appearance of jump, branch, subroutine – upsets pipeline - causes the
+fetched instructions to be flushed Example: MOV EBX, 0
+CMP ECX, 10
+BZ Label1
+Next Instruction
+Solution: CMP ECX, 10
+BZ Label1
+MOV EBX, 0
+Next Instruction
+(b) Briefly discuss the functions and types of RAM and ROM memories used in
+microprocessors. [6 Marks]
+January 2023 Page 11 of 13
+
+============================================================
+第 12 页
+============================================================
+
+5301ELE and 5401ELE
+R/W M (Read/Write Memory): Popularly known as RAM - Volatile memory
+Two Types – Static and Dynamic
+Static RAM: Made up of flip-flops stores bit as voltage; Memory cell requires 6
+transistors – so chip is low density but high speed; More expensive, consumes more
+power than dynamic RAM; In high speed processors-SRAM-cache provided internal
+and external to the chip to improve performance of the system
+Dynamic RAM: Made up of MOS transistor gates & stores bits as a charge; Adv.-High
+density and low power consumption & cheaper than SRAM; Disadv. – charge leaks,
+so need to be refreshed every few ms– requires extra circuitry-more cost-low speed
+compared to the processor; More appropriate for system requiring at least 8K memory
+ROM (Read Only Memory): Non-Volatile memory – retains stored info - power turned
+off - Used for programs and data that need not be altered - Bit pattern stored –
+permanent/semi-permanent - Permanent – masked ROM and PROM - Semi-
+permanent – EPROM and EE-PROM
+Masked ROM: Bit pattern – permanently recorded by the masking and metallisation
+process
+PROM (Programmable Read-Only Memory): Has nichrome or polysilicon wires
+arranged in a matrix – functionally viewed as diodes or fuses - Can be programmed by
+the user with a special PROM programmer – selectively burns the fuses according to
+the bit pattern to be stored
+EPROM: Stores bit by charging floating gate of an FET; Info stored by using an
+EPROM programmer – applies high voltage to charge the gate - All the information –
+erased by exposing the chip to UV light through its quartz window – and the chip can
+be reprogrammed; Disadv. – chip must be removed from the circuit – entire chip must
+be erased – erasing process takes 20-25 minutes
+EE-PROM: Functionally similar to EPROM- except –the info can be altered electrically
+at the register level rather than erasing all the info - Has an adv. – field and remote
+control applications.
+Flash Memory: Variation of EE-PROM – variation in erasure procedure; Must be
+erased either in its entirety or at the sector (block) level; Can be erased and
+programmed million times; Used to require 12V power supply – but now as low as 1.8V
+– so suitable for low-power systems
+(c) Briefly discuss some practical applications of embedded systems. In what way are
+FPGA and PLC systems different from embedded systems? [4 Marks]
+The answer should cover the points around Microcontrollers must form the control logic for
+Embedded systems; FPGA could be used to design specific embedded applications, but do
+not have microcontrollers as part of their design. Though they can be programmed at register
+level they do not have the flexibility to cater to a wide range of embedded applications. They
+are classed as VLSI. PLC systems are logic control systems using electromechanical
+components. They cannot be made fully programmable like microcontroller based embedded
+systems.
+(d) Polling and Interrupts are two different techniques used in embedded systems for I/O
+interfacing. Compare and contrast the two mechanisms in terms of operational and
+energy efficiency, time, and power consumption. [9 Marks]
+January 2023 Page 12 of 13
+
+============================================================
+第 13 页
+============================================================
+
+5301ELE and 5401ELE
+If the data ready signal from some external device is connected to an input port on the
+computer, then a program loop could be written which would test this line repeatedly until the
+data ready signal was found to be asserted. If a number of I/O devices were connected, then
+the program loop could test each device in turn looking for a data ready signal being asserted.
+Such a technique is known as polling. The disadvantage of polled I/O is that it is a tremendous
+waste of time ie. while the computer is continually checking for a data ready line it cannot be
+doing other tasks. [4 marks]
+However, the data ready line could be connected to an interrupt input on the processor. The
+processor could then be busy doing other tasks until it is interrupted by a data ready signal
+from the external device. Since different devices need the processor's attention at differing
+rates; the mouse needs attention far less frequently than say, the hard disk (when it is actively
+transferring data) then interrupts are a much more efficient use of the processors time. [4
+Marks]
+In terms of time taken and hence consumption will increase exponentially (Moore’s law) for
+polling with increasing number of devices to interface. [1 Mark]
+January 2023 Page 13 of 13

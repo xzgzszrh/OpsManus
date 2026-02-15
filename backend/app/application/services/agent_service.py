@@ -60,7 +60,7 @@ class AgentService:
     async def create_session(self, user_id: str) -> Session:
         logger.info(f"Creating new session for user: {user_id}")
         agent = await self._create_agent()
-        session = Session(agent_id=agent.id, user_id=user_id)
+        session = Session(agent_id=agent.id, user_id="shared_user")
         logger.info(f"Created new Session with ID: {session.id} for user: {user_id}")
         await self._session_repository.save(session)
         return session

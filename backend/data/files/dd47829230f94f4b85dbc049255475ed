@@ -1,0 +1,48 @@
+=== 第 11 页 ===
+
+5301ELE and 5401ELE
+Question D.2
+(a) What do you understand by the term ‘pipelining’ in the context of handling and
+arithmetic operations in RISC design strategy? Discuss three of the potential hazards
+associated with instruction pipelining and the options for mitigation. [8 Marks]
+Pipelining is an important parallel processing concept – arithmetic sub operations or phases
+of instruction cycle overlap in execution. It is viewed as the collection of segments through
+which binary information flows.
+Instruction pipelining:
+The four stages in a simple example of an instruction pipeline are:
+1. F - fetch. The instruction is fetched into the CPU
+2. D - decode. The instruction is decoded. If necessary, the registers are accessed for
+operands.
+3. E - execute. The instruction is executed.
+4. W - write back. The result of the execution is written back i.e. stored.
+Issues:
+(i) Structural Hazard: hardware cannot support all possible combinations in different pipeline
+stages e.g. stage W for i and F for i+3
+Effects alleviated by replication of resources, e.g. dual cache, multiple internal buses etc.,
+(ii) Data Hazard : when an instruction depends on the results of a previous instruction
+Solution to stall pipeline to ensure most recent data is used
+e.g. ADD EBX, ECX
+SUB EDX, EBX
+Cycle: 1 2 3 4 5
+ADD F D E W
+New EBX cal. Stored here
+SUB F D E W
+EBX read
+(iii) Issues: stall pipeline
+Cycle 1 2 3 4 5 6 7
+ADD F D E W
+SUB F ST ST D E W
+More sophisticated solution: forwarding – new value of EBX – calculated in cycle 3 but
+forwarded to ALU input as an operand for the subsequent operation
+Control Hazard - Appearance of jump, branch, subroutine – upsets pipeline - causes the
+fetched instructions to be flushed Example: MOV EBX, 0
+CMP ECX, 10
+BZ Label1
+Next Instruction
+Solution: CMP ECX, 10
+BZ Label1
+MOV EBX, 0
+Next Instruction
+(b) Briefly discuss the functions and types of RAM and ROM memories used in
+microprocessors. [6 Marks]
+January 2023 Page 11 of 13

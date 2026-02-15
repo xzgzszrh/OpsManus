@@ -1,0 +1,48 @@
+=== 第 12 页 ===
+
+5301ELE and 5401ELE
+R/W M (Read/Write Memory): Popularly known as RAM - Volatile memory
+Two Types – Static and Dynamic
+Static RAM: Made up of flip-flops stores bit as voltage; Memory cell requires 6
+transistors – so chip is low density but high speed; More expensive, consumes more
+power than dynamic RAM; In high speed processors-SRAM-cache provided internal
+and external to the chip to improve performance of the system
+Dynamic RAM: Made up of MOS transistor gates & stores bits as a charge; Adv.-High
+density and low power consumption & cheaper than SRAM; Disadv. – charge leaks,
+so need to be refreshed every few ms– requires extra circuitry-more cost-low speed
+compared to the processor; More appropriate for system requiring at least 8K memory
+ROM (Read Only Memory): Non-Volatile memory – retains stored info - power turned
+off - Used for programs and data that need not be altered - Bit pattern stored –
+permanent/semi-permanent - Permanent – masked ROM and PROM - Semi-
+permanent – EPROM and EE-PROM
+Masked ROM: Bit pattern – permanently recorded by the masking and metallisation
+process
+PROM (Programmable Read-Only Memory): Has nichrome or polysilicon wires
+arranged in a matrix – functionally viewed as diodes or fuses - Can be programmed by
+the user with a special PROM programmer – selectively burns the fuses according to
+the bit pattern to be stored
+EPROM: Stores bit by charging floating gate of an FET; Info stored by using an
+EPROM programmer – applies high voltage to charge the gate - All the information –
+erased by exposing the chip to UV light through its quartz window – and the chip can
+be reprogrammed; Disadv. – chip must be removed from the circuit – entire chip must
+be erased – erasing process takes 20-25 minutes
+EE-PROM: Functionally similar to EPROM- except –the info can be altered electrically
+at the register level rather than erasing all the info - Has an adv. – field and remote
+control applications.
+Flash Memory: Variation of EE-PROM – variation in erasure procedure; Must be
+erased either in its entirety or at the sector (block) level; Can be erased and
+programmed million times; Used to require 12V power supply – but now as low as 1.8V
+– so suitable for low-power systems
+(c) Briefly discuss some practical applications of embedded systems. In what way are
+FPGA and PLC systems different from embedded systems? [4 Marks]
+The answer should cover the points around Microcontrollers must form the control logic for
+Embedded systems; FPGA could be used to design specific embedded applications, but do
+not have microcontrollers as part of their design. Though they can be programmed at register
+level they do not have the flexibility to cater to a wide range of embedded applications. They
+are classed as VLSI. PLC systems are logic control systems using electromechanical
+components. They cannot be made fully programmable like microcontroller based embedded
+systems.
+(d) Polling and Interrupts are two different techniques used in embedded systems for I/O
+interfacing. Compare and contrast the two mechanisms in terms of operational and
+energy efficiency, time, and power consumption. [9 Marks]
+January 2023 Page 12 of 13

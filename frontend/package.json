@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@microsoft/fetch-event-source": "^2.0.1",
-    "@novnc/novnc": "^1.5.0",
+    "@novnc/novnc": "1.5.0",
     "@types/dompurify": "^3.2.0",
     "@vueuse/core": "^10.11.1",
     "axios": "^1.8.4",
@@ -42,5 +42,10 @@
     "vite": "^4.3.9",
     "vite-plugin-monaco-editor": "^1.1.0",
     "vue-tsc": "^1.6.5"
+  },
+  "pnpm": {
+    "overrides": {
+      "@novnc/novnc": "1.5.0"
+    }
   }
 }

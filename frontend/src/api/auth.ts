@@ -24,7 +24,7 @@ export interface User {
  * Login request type
  */
 export interface LoginRequest {
-  email: string;
+  username: string;
   password: string;
 }
 

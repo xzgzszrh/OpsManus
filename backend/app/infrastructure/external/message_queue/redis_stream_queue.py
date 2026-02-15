@@ -1,6 +1,7 @@
 import json
 import uuid
 import asyncio
+import re
 from typing import Any, AsyncGenerator, Optional, Tuple
 import logging
 from app.infrastructure.storage.redis import get_redis
@@ -97,9 +98,7 @@ class RedisStreamQueue(MessageQueue):
             Tuple[str, Any]: (Message ID, Message content), returns (None, None) if no message
         """
         logger.debug(f"Getting message from stream ({self._stream_name}): {start_id}")
-        # Handle None start_id by using "0" (read from beginning)
-        if start_id is None:
-            start_id = "0"
+        start_id = self._normalize_start_id(start_id)
             
         # Read new messages
         messages = await self._redis.client.xread(
@@ -223,3 +222,23 @@ class RedisStreamQueue(MessageQueue):
         finally:
             # Always release the lock
             await self._release_lock(lock_key, lock_value)
+    _STREAM_ID_PATTERN = re.compile(r"^\d+(?:-\d+)?$|^\$$")
+
+    @classmethod
+    def _normalize_start_id(cls, start_id: Optional[str]) -> str:
+        """Normalize XREAD start_id to a valid Redis Stream ID."""
+        if start_id is None:
+            return "0-0"
+        if isinstance(start_id, bytes):
+            start_id = start_id.decode("utf-8", errors="ignore")
+
+        start_id = str(start_id).strip()
+        if not start_id:
+            return "0-0"
+
+        # Accept normal stream IDs and "$". Everything else falls back.
+        if cls._STREAM_ID_PATTERN.match(start_id):
+            return start_id
+
+        logger.warning("Invalid redis stream start_id '%s', fallback to 0-0", start_id)
+        return "0-0"

@@ -441,18 +441,23 @@ const restoreSession = async () => {
     showErrorToast(t('Session not found'));
     return;
   }
-  const session = await agentApi.getSession(sessionId.value);
-  // Initialize share mode based on session state
-  shareMode.value = session.is_shared ? 'public' : 'private';
-  realTime.value = false;
-  for (const event of session.events) {
-    handleEvent(event);
+  try {
+    const session = await agentApi.getSession(sessionId.value);
+    // Initialize share mode based on session state
+    shareMode.value = session.is_shared ? 'public' : 'private';
+    realTime.value = false;
+    for (const event of session.events) {
+      handleEvent(event);
+    }
+    realTime.value = true;
+    if (session.status === SessionStatus.RUNNING || session.status === SessionStatus.PENDING) {
+      await chat();
+    }
+    agentApi.clearUnreadMessageCount(sessionId.value);
+  } catch (error) {
+    console.error('Failed to restore session:', error);
+    showErrorToast(t('Failed to load session'));
   }
-  realTime.value = true;
-  if (session.status === SessionStatus.RUNNING || session.status === SessionStatus.PENDING) {
-    await chat();
-  }
-  agentApi.clearUnreadMessageCount(sessionId.value);
 }
 
 

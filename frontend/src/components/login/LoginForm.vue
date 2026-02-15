@@ -8,20 +8,20 @@
               <!-- Email field -->
               <div class="flex flex-col items-start">
                 <div class="w-full flex items-center justify-between gap-[12px] mb-[8px]">
-                  <label for="email"
+                  <label for="username"
                     class="text-[13px] text-[var(--text-primary)] font-medium after:content-[&quot;*&quot;] after:text-[var(--function-error)] after:ml-[4px]">
-                    <span>{{ t('Email') }}</span>
+                    <span>{{ t('Username') }}</span>
                   </label>
                 </div>
-                <input v-model="formData.email"
+                <input v-model="formData.username"
                   class="rounded-[10px] overflow-hidden text-sm leading-[22px] text-[var(--text-primary)] h-10 disabled:cursor-not-allowed placeholder:text-[var(--text-disable)] bg-[var(--fill-input-chat)] pt-1 pr-1.5 pb-1 pl-3 focus:ring-[1.5px] focus:ring-[var(--border-dark)] w-full"
-                  :class="{ 'ring-1 ring-[var(--function-error)]': validationErrors.email }" id="email"
-                  placeholder="mail@domain.com" type="email" :disabled="isLoading" @input="validateField('email')"
-                  @blur="validateField('email')">
+                  :class="{ 'ring-1 ring-[var(--function-error)]': validationErrors.username }" id="username"
+                  :placeholder="t('Enter username')" type="text" :disabled="isLoading" @input="validateField('username')"
+                  @blur="validateField('username')">
                 <div
                   class="text-[13px] text-[var(--function-error)] leading-[18px] overflow-hidden transition-all duration-300 ease-out"
-                  :class="validationErrors.email ? 'opacity-100 max-h-[60px] mt-[2px]' : 'opacity-0 max-h-0 mt-0'">
-                  {{ validationErrors.email }}
+                  :class="validationErrors.username ? 'opacity-100 max-h-[60px] mt-[2px]' : 'opacity-0 max-h-0 mt-0'">
+                  {{ validationErrors.username }}
                 </div>
               </div>
 
@@ -33,6 +33,7 @@
                     <span>{{ t('Password') }}</span>
                   </label>
                   <span
+                    v-if="hasPasswordFeatures"
                     class="underline text-[var(--text-tertiary)] text-[13px] leading-[18px] transition-opacity cursor-pointer select-none hover:opacity-80 active:opacity-80"
                     @click="emits('switchToReset')">{{ t('Forgot Password?') }}</span>
                 </div>
@@ -71,7 +72,7 @@
         </div>
 
         <!-- Toggle to register -->
-        <div v-if="hasRegister" class="text-center text-[13px] leading-[18px] text-[var(--text-tertiary)] mt-[8px]">
+        <div v-if="hasPasswordFeatures" class="text-center text-[13px] leading-[18px] text-[var(--text-tertiary)] mt-[8px]">
           <span>{{ t('Don\'t have an account?') }}</span>
           <span
             class="ms-[8px] text-[var(--text-secondary)] cursor-pointer select-none hover:opacity-80 active:opacity-70 transition-all underline"
@@ -103,14 +104,14 @@ const emits = defineEmits<{
 }>()
 
 const { login, isLoading, authError } = useAuth()
-const hasRegister = ref(false)
+const hasPasswordFeatures = ref(false)
 
 // Form state
 const showPassword = ref(false)
 
 // Form data
 const formData = ref({
-  email: '',
+  username: '',
   password: ''
 })
 
@@ -120,7 +121,7 @@ const validationErrors = ref<Record<string, string>>({})
 // Clear form
 const clearForm = () => {
   formData.value = {
-    email: '',
+    username: '',
     password: ''
   }
   validationErrors.value = {}
@@ -130,10 +131,9 @@ const clearForm = () => {
 const validateField = (field: string) => {
   const errors: Record<string, string> = {}
 
-  if (field === 'email') {
-    const result = validateUserInput({ email: formData.value.email })
-    if (result.errors.email) {
-      errors.email = result.errors.email
+  if (field === 'username') {
+    if (!formData.value.username.trim()) {
+      errors.username = t('Username is required')
     }
   }
 
@@ -158,19 +158,24 @@ const validateField = (field: string) => {
 // Validate entire form
 const validateForm = () => {
   const data = {
-    email: formData.value.email,
+    username: formData.value.username,
     password: formData.value.password
   }
-
-  const result = validateUserInput(data)
-  validationErrors.value = { ...result.errors }
+  validationErrors.value = {}
+  if (!data.username.trim()) {
+    validationErrors.value.username = t('Username is required')
+  }
+  const result = validateUserInput({ password: data.password })
+  if (result.errors.password) {
+    validationErrors.value.password = result.errors.password
+  }
 
   return Object.keys(validationErrors.value).length === 0
 }
 
 // Check if form is valid
 const isFormValid = computed(() => {
-  const hasRequiredFields = formData.value.email.trim() && formData.value.password.trim()
+  const hasRequiredFields = formData.value.username.trim() && formData.value.password.trim()
   const hasNoErrors = Object.keys(validationErrors.value).length === 0
   return hasRequiredFields && hasNoErrors
 })
@@ -183,7 +188,7 @@ const handleSubmit = async () => {
 
   try {
     await login({
-      email: formData.value.email,
+      username: formData.value.username,
       password: formData.value.password
     })
     
@@ -201,7 +206,7 @@ const handleSubmit = async () => {
 
 onMounted(async () => {
   const authProvider = await getCachedAuthProvider()
-  hasRegister.value = authProvider === 'password'
+  hasPasswordFeatures.value = authProvider === 'password'
 })
 
 // Expose clearForm method for parent component

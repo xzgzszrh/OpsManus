@@ -20,6 +20,22 @@ class AuthService:
         self.user_repository = user_repository
         self.settings = get_settings()
         self.token_service = token_service
+
+    def _parse_local_accounts(self) -> dict[str, str]:
+        accounts: dict[str, str] = {}
+        raw_accounts = self.settings.local_auth_accounts or ""
+        if raw_accounts.strip():
+            for pair in raw_accounts.split(","):
+                pair = pair.strip()
+                if not pair or ":" not in pair:
+                    continue
+                username, password = pair.split(":", 1)
+                username = username.strip()
+                if username and password:
+                    accounts[username] = password
+        if not accounts:
+            accounts[self.settings.local_auth_email] = self.settings.local_auth_password
+        return accounts
     
     def _hash_password(self, password: str) -> str:
         """Hash password using configured algorithm"""
@@ -102,9 +118,9 @@ class AuthService:
         logger.info(f"User registered successfully: {created_user.id}")
         return created_user
     
-    async def authenticate_user(self, email: str, password: str) -> Optional[User]:
-        """Authenticate user by email and password"""
-        logger.debug(f"Authenticating user: {email}")
+    async def authenticate_user(self, username: str, password: str) -> Optional[User]:
+        """Authenticate user by username and password"""
+        logger.debug(f"Authenticating user: {username}")
         
         # Handle different auth providers
         if self.settings.auth_provider == "none":
@@ -118,56 +134,56 @@ class AuthService:
             )
         
         elif self.settings.auth_provider == "local":
-            # Local authentication using configured credentials
-            if (email == self.settings.local_auth_email and 
-                password == self.settings.local_auth_password):
+            # Local static authentication using configured accounts
+            accounts = self._parse_local_accounts()
+            if accounts.get(username) == password:
                 return User(
-                    id="local_admin",
-                    fullname="Local Admin",
-                    email=email,
+                    id="shared_user",
+                    fullname=username,
+                    email=f"{username}@local",
                     role=UserRole.ADMIN,
                     is_active=True
                 )
             else:
-                logger.warning(f"Local authentication failed for user: {email}")
+                logger.warning(f"Local authentication failed for user: {username}")
                 return None
         
         elif self.settings.auth_provider == "password":
             # Database password authentication
-            user = await self.user_repository.get_user_by_email(email)
+            user = await self.user_repository.get_user_by_email(username)
             if not user:
-                logger.warning(f"User not found: {email}")
+                logger.warning(f"User not found: {username}")
                 return None
             
             if not user.is_active:
-                logger.warning(f"User account is inactive: {email}")
+                logger.warning(f"User account is inactive: {username}")
                 return None
             
             if not user.password_hash:
-                logger.warning(f"User has no password hash: {email}")
+                logger.warning(f"User has no password hash: {username}")
                 return None
             
             # Verify password
             if not self._verify_password(password, user.password_hash):
-                logger.warning(f"Invalid password for user: {email}")
+                logger.warning(f"Invalid password for user: {username}")
                 return None
             
             # Update last login
             user.update_last_login()
             await self.user_repository.update_user(user)
             
-            logger.info(f"User authenticated successfully: {email}")
+            logger.info(f"User authenticated successfully: {username}")
             return user
         
         else:
             raise ValueError(f"Unsupported auth provider: {self.settings.auth_provider}")
     
-    async def login_with_tokens(self, email: str, password: str) -> AuthToken:
+    async def login_with_tokens(self, username: str, password: str) -> AuthToken:
         """Authenticate user and return JWT tokens"""
-        user = await self.authenticate_user(email, password)
+        user = await self.authenticate_user(username, password)
         
         if not user:
-            raise UnauthorizedError("Invalid email or password")
+            raise UnauthorizedError("Invalid username or password")
         
         # Generate JWT tokens
         access_token = self.token_service.create_access_token(user)
@@ -190,12 +206,21 @@ class AuthService:
         if payload.get("type") != "refresh":
             raise UnauthorizedError("Invalid token type")
         
-        # Get user from database
-        user_id = payload.get("sub")
-        user = await self.user_repository.get_user_by_id(user_id)
-        
-        if not user or not user.is_active:
-            raise UnauthorizedError("User not found or inactive")
+        # Local/none auth does not rely on user repository
+        if self.settings.auth_provider in {"local", "none"}:
+            user = User(
+                id=payload.get("sub") or "shared_user",
+                fullname=payload.get("fullname") or "Local Admin",
+                email=f"{(payload.get('fullname') or 'local').lower()}@local",
+                role=UserRole.ADMIN if self.settings.auth_provider == "local" else UserRole.USER,
+                is_active=True,
+            )
+        else:
+            # Get user from database
+            user_id = payload.get("sub")
+            user = await self.user_repository.get_user_by_id(user_id)
+            if not user or not user.is_active:
+                raise UnauthorizedError("User not found or inactive")
         
         # Generate new access token
         new_access_token = self.token_service.create_access_token(user)
@@ -237,6 +262,9 @@ class AuthService:
     async def change_password(self, user_id: str, old_password: str, new_password: str) -> bool:
         """Change user password"""
         logger.info(f"Changing password for user: {user_id}")
+
+        if self.settings.auth_provider != "password":
+            raise BadRequestError("Password change is not available")
         
         # Get user
         user = await self.user_repository.get_user_by_id(user_id)
@@ -269,6 +297,9 @@ class AuthService:
     async def change_fullname(self, user_id: str, new_fullname: str) -> User:
         """Change user fullname"""
         logger.info(f"Changing fullname for user: {user_id}")
+
+        if self.settings.auth_provider != "password":
+            raise BadRequestError("Full name change is not available")
         
         # Get user
         user = await self.user_repository.get_user_by_id(user_id)
@@ -298,6 +329,9 @@ class AuthService:
     async def deactivate_user(self, user_id: str) -> bool:
         """Deactivate user account"""
         logger.info(f"Deactivating user: {user_id}")
+
+        if self.settings.auth_provider != "password":
+            raise BadRequestError("User deactivation is not available")
         
         user = await self.user_repository.get_user_by_id(user_id)
         if not user:
@@ -312,6 +346,9 @@ class AuthService:
     async def activate_user(self, user_id: str) -> bool:
         """Activate user account"""
         logger.info(f"Activating user: {user_id}")
+
+        if self.settings.auth_provider != "password":
+            raise BadRequestError("User activation is not available")
         
         user = await self.user_repository.get_user_by_id(user_id)
         if not user:
