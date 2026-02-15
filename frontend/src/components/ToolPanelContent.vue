@@ -2,7 +2,7 @@
   <div class="bg-[var(--background-gray-main)] sm:bg-[var(--background-menu-white)] sm:rounded-[22px] shadow-[0px_0px_8px_0px_rgba(0,0,0,0.02)] border border-black/8 dark:border-[var(--border-light)] flex h-full w-full">
     <div class="flex-1 min-w-0 p-4 flex flex-col h-full">
       <div class="flex items-center gap-2 w-full">
-        <div class="text-[var(--text-primary)] text-lg font-semibold flex-1">{{ $t('Manus Computer') }}</div>
+        <div class="text-[var(--text-primary)] text-lg font-semibold flex-1">{{ panelTitle }}</div>
         <button
           class="w-7 h-7 relative rounded-md inline-flex items-center justify-center gap-2.5 cursor-pointer hover:bg-[var(--fill-tsp-gray-main)]">
           <Minimize2 class="w-5 h-5 text-[var(--icon-tertiary)]" @click="hide" />
@@ -41,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-import { toRef } from 'vue';
+import { computed, toRef } from 'vue';
 import { Minimize2, PlayIcon } from 'lucide-vue-next';
 import type { ToolContent } from '@/types/message';
 import { useToolInfo } from '@/composables/useTool';
@@ -55,6 +55,13 @@ const props = defineProps<{
 }>();
 
 const { toolInfo } = useToolInfo(toRef(props, 'toolContent'));
+const panelTitle = computed(() => {
+  if (props.toolContent?.name !== 'ssh') return 'Manus Computer';
+  return props.toolContent?.content?.node_name
+    || props.toolContent?.content?.node_id
+    || props.toolContent?.args?.node_id
+    || 'Server Node Console';
+});
 
 const emit = defineEmits<{
   (e: 'jumpToRealTime'): void,

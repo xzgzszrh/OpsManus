@@ -8,6 +8,9 @@ export const TOOL_FUNCTION_MAP: {[key: string]: string} = {
   "shell_wait": "Waiting for command completion",
   "shell_write_to_process": "Writing data to process",
   "shell_kill_process": "Terminating process",
+  "ssh_node_list": "Listing server nodes",
+  "ssh_node_exec": "Running SSH command",
+  "ssh_node_monitor": "Reading server monitor",
   
   // File tools
   "file_read": "Reading file",
@@ -47,6 +50,9 @@ export const TOOL_FUNCTION_ARG_MAP: {[key: string]: string} = {
   "shell_wait": "shell",
   "shell_write_to_process": "input",
   "shell_kill_process": "shell",
+  "ssh_node_list": "node_id",
+  "ssh_node_exec": "command",
+  "ssh_node_monitor": "node_id",
   "file_read": "file",
   "file_write": "file",
   "file_str_replace": "file",
@@ -78,7 +84,8 @@ export const TOOL_NAME_MAP: {[key: string]: string} = {
   "browser": "Browser",
   "info": "Information",
   "message": "Message",
-  "mcp": "MCP Tool"
+  "mcp": "MCP Tool",
+  "ssh": "Terminal"
 };
 
 import SearchIcon from '../components/icons/SearchIcon.vue';
@@ -95,7 +102,8 @@ export const TOOL_ICON_MAP: {[key: string]: any} = {
   "browser": BrowserIcon,
   "search": SearchIcon,
   "message": "",
-  "mcp": SearchIcon  // 暂时使用搜索图标，可以后续创建专门的MCP图标
+  "mcp": SearchIcon,  // 暂时使用搜索图标，可以后续创建专门的MCP图标
+  "ssh": ShellIcon
 };
 
 import ShellToolView from '@/components/toolViews/ShellToolView.vue';
@@ -103,6 +111,7 @@ import FileToolView from '@/components/toolViews/FileToolView.vue';
 import SearchToolView from '@/components/toolViews/SearchToolView.vue';
 import BrowserToolView from '@/components/toolViews/BrowserToolView.vue';
 import McpToolView from '@/components/toolViews/McpToolView.vue';
+import SshToolView from '@/components/toolViews/SshToolView.vue';
 
 /**
  * Mapping from tool names to components
@@ -112,5 +121,6 @@ export const TOOL_COMPONENT_MAP: {[key: string]: any} = {
   "file": FileToolView,
   "search": SearchToolView,
   "browser": BrowserToolView,
-  "mcp": McpToolView
+  "mcp": McpToolView,
+  "ssh": SshToolView
 };

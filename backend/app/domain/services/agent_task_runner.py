@@ -18,7 +18,7 @@ from app.domain.models.event import (
     ToolStatus,
     AgentEvent,
     McpToolContent,
-    ToolStatus
+    SSHToolContent,
 )
 from app.domain.services.flows.plan_act import PlanActFlow
 from app.domain.external.sandbox import Sandbox
@@ -36,6 +36,7 @@ from app.domain.utils.json_parser import JsonParser
 from app.domain.services.tools.mcp import MCPTool
 from app.domain.models.tool_result import ToolResult
 from app.domain.models.search import SearchResults
+from app.application.services.node_service import NodeService
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +55,7 @@ class AgentTaskRunner(TaskRunner):
         json_parser: JsonParser,
         file_storage: FileStorage,
         mcp_repository: MCPRepository,
+        node_service: NodeService,
         search_engine: Optional[SearchEngine] = None,
     ):
         self._session_id = session_id
@@ -68,6 +70,7 @@ class AgentTaskRunner(TaskRunner):
         self._json_parser = json_parser
         self._file_storage = file_storage
         self._mcp_repository = mcp_repository
+        self._node_service = node_service
         self._mcp_tool = MCPTool()
         self._flow = PlanActFlow(
             self._agent_id,
@@ -79,6 +82,8 @@ class AgentTaskRunner(TaskRunner):
             self._browser,
             self._json_parser,
             self._mcp_tool,
+            self._node_service,
+            self._user_id,
             self._search_engine,
         )
 
@@ -203,6 +208,19 @@ class AgentTaskRunner(TaskRunner):
                     if event.tool_content:
                         logger.debug(f"MCP tool_content.result: {event.tool_content.result}")
                         logger.debug(f"MCP tool_content dict: {event.tool_content.model_dump()}")
+                elif event.tool_name == "ssh":
+                    result_data = {}
+                    if event.function_result and hasattr(event.function_result, "data") and event.function_result.data:
+                        result_data = event.function_result.data
+                    event.tool_content = SSHToolContent(
+                        node_id=result_data.get("node_id"),
+                        node_name=result_data.get("node_name"),
+                        command=result_data.get("command") or event.function_args.get("command"),
+                        output=result_data.get("output"),
+                        success=result_data.get("success"),
+                        approval_required=bool(result_data.get("approval_required")),
+                        approval_id=result_data.get("approval_id"),
+                    )
                 else:
                     logger.warning(f"Agent {self._agent_id} received unknown tool event: {event.tool_name}")
         except Exception as e:

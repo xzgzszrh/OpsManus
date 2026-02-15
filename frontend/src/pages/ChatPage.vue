@@ -124,6 +124,21 @@
       :isShare="false"
       @jumpToRealTime="jumpToRealTime" />
   </SimpleBar>
+  <div v-if="approvalDialogVisible && currentApproval" class="fixed inset-0 z-[70] bg-black/40 flex items-center justify-center p-4">
+    <div class="w-full max-w-[560px] rounded-xl bg-white p-4 border border-[var(--border-main)]">
+      <div class="text-base font-semibold mb-2">SSH command approval required</div>
+      <div class="text-xs text-[var(--text-tertiary)] mb-2">Approval ID: {{ currentApproval.approval_id }}</div>
+      <pre class="text-xs bg-[var(--background-gray-main)] p-2 rounded whitespace-pre-wrap">{{ currentApproval.command }}</pre>
+      <div class="mt-3">
+        <label class="text-xs text-[var(--text-tertiary)]">Reject reason (required if reject)</label>
+        <textarea v-model="approvalRejectReason" rows="3" class="w-full border rounded px-2 py-1 text-sm mt-1" />
+      </div>
+      <div class="mt-4 flex justify-end gap-2">
+        <button class="px-3 py-1 border rounded" @click="handleApproval(false)">Reject</button>
+        <button class="px-3 py-1 border rounded bg-[var(--Button-primary-black)] text-[var(--text-onblack)]" @click="handleApproval(true)">Approve</button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -157,6 +172,7 @@ import { copyToClipboard } from '../utils/dom'
 import { SessionStatus } from '../types/response';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import LoadingIndicator from '@/components/ui/LoadingIndicator.vue';
+import { decideApproval, listSessionApprovals, type PendingApprovalItem } from '@/api/node';
 
 const router = useRouter()
 const { t } = useI18n()
@@ -183,7 +199,10 @@ const createInitialState = () => ({
   attachments: [] as FileInfo[],
   shareMode: 'private' as 'private' | 'public', // Default to private mode
   linkCopied: false,
-  sharingLoading: false // Loading state for share operations
+  sharingLoading: false, // Loading state for share operations
+  pendingApprovals: [] as PendingApprovalItem[],
+  approvalDialogVisible: false,
+  approvalRejectReason: '',
 });
 
 // Create reactive state
@@ -207,8 +226,13 @@ const {
   attachments,
   shareMode,
   linkCopied,
-  sharingLoading
+  sharingLoading,
+  pendingApprovals,
+  approvalDialogVisible,
+  approvalRejectReason
 } = toRefs(state);
+
+const currentApproval = ref<PendingApprovalItem | null>(null);
 
 // Non-state refs that don't need reset
 const toolPanel = ref<InstanceType<typeof ToolPanel>>()
@@ -284,6 +308,9 @@ const handleToolEvent = (toolData: ToolEventData) => {
     if (realTime.value) {
       toolPanel.value?.showToolPanel(toolContent, true);
     }
+    if (toolContent.name === 'ssh' && toolContent.content?.approval_required) {
+      loadApprovals();
+    }
   }
 }
 
@@ -340,7 +367,7 @@ const handleEvent = (event: AgentSSEEvent) => {
   } else if (event.event === 'done') {
     //isLoading.value = false;
   } else if (event.event === 'wait') {
-    // TODO: handle wait event
+    loadApprovals();
   } else if (event.event === 'error') {
     handleErrorEvent(event.data as ErrorEventData);
   } else if (event.event === 'title') {
@@ -349,6 +376,41 @@ const handleEvent = (event: AgentSSEEvent) => {
     handlePlanEvent(event.data as PlanEventData);
   }
   lastEventId.value = event.data.event_id;
+}
+
+const loadApprovals = async () => {
+  if (!sessionId.value) return;
+  try {
+    const approvals = await listSessionApprovals(sessionId.value);
+    pendingApprovals.value = approvals;
+    if (approvals.length > 0) {
+      currentApproval.value = approvals[0];
+      approvalDialogVisible.value = true;
+    } else {
+      approvalDialogVisible.value = false;
+      currentApproval.value = null;
+    }
+  } catch (e) {
+    console.error('Load approvals failed', e);
+  }
+}
+
+const handleApproval = async (approve: boolean) => {
+  if (!currentApproval.value || !sessionId.value) return;
+  if (!approve && !approvalRejectReason.value.trim()) {
+    showErrorToast('Please provide reject reason');
+    return;
+  }
+  try {
+    const reason = approvalRejectReason.value.trim();
+    await decideApproval(currentApproval.value.approval_id, approve, approvalRejectReason.value.trim());
+    approvalRejectReason.value = '';
+    approvalDialogVisible.value = false;
+    await loadApprovals();
+    await chat(approve ? 'SSH approval passed, continue execution.' : `SSH approval rejected: ${reason || 'No reason'}`);
+  } catch (e: any) {
+    showErrorToast(e?.response?.data?.msg || 'Approval action failed');
+  }
 }
 
 const handleSubmit = () => {

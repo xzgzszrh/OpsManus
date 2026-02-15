@@ -17,6 +17,7 @@ from typing import Type
 from app.domain.external.file import FileStorage
 from app.domain.models.file import FileInfo
 from app.domain.repositories.mcp_repository import MCPRepository
+from app.application.services.node_service import NodeService
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -36,6 +37,7 @@ class AgentDomainService:
         json_parser: JsonParser,
         file_storage: FileStorage,
         mcp_repository: MCPRepository,
+        node_service: NodeService,
         search_engine: Optional[SearchEngine] = None,
     ):
         self._repository = agent_repository
@@ -47,6 +49,7 @@ class AgentDomainService:
         self._json_parser = json_parser
         self._file_storage = file_storage
         self._mcp_repository = mcp_repository
+        self._node_service = node_service
         logger.info("AgentDomainService initialization completed")
             
     async def shutdown(self) -> None:
@@ -85,6 +88,7 @@ class AgentDomainService:
             json_parser=self._json_parser,
             agent_repository=self._repository,
             mcp_repository=self._mcp_repository,
+            node_service=self._node_service,
         )
 
         task = self._task_cls.create(task_runner)

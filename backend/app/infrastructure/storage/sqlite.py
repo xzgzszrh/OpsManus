@@ -97,6 +97,59 @@ class SQLiteStorage:
                         user_id TEXT,
                         storage_path TEXT NOT NULL
                     );
+
+                    CREATE TABLE IF NOT EXISTS server_nodes (
+                        node_id TEXT PRIMARY KEY,
+                        user_id TEXT NOT NULL,
+                        name TEXT NOT NULL,
+                        description TEXT,
+                        remarks TEXT,
+                        ssh_enabled INTEGER NOT NULL DEFAULT 0,
+                        ssh_host TEXT,
+                        ssh_port INTEGER NOT NULL DEFAULT 22,
+                        ssh_username TEXT,
+                        ssh_auth_type TEXT NOT NULL DEFAULT 'password',
+                        ssh_password TEXT,
+                        ssh_private_key TEXT,
+                        ssh_passphrase TEXT,
+                        ssh_require_approval INTEGER NOT NULL DEFAULT 0,
+                        created_at TEXT NOT NULL,
+                        updated_at TEXT NOT NULL
+                    );
+
+                    CREATE INDEX IF NOT EXISTS idx_server_nodes_user
+                    ON server_nodes(user_id, updated_at DESC);
+
+                    CREATE TABLE IF NOT EXISTS ssh_operation_logs (
+                        log_id TEXT PRIMARY KEY,
+                        session_id TEXT,
+                        node_id TEXT NOT NULL,
+                        actor_type TEXT NOT NULL,
+                        actor_id TEXT,
+                        source TEXT NOT NULL,
+                        command TEXT NOT NULL,
+                        output TEXT,
+                        success INTEGER NOT NULL DEFAULT 0,
+                        created_at TEXT NOT NULL
+                    );
+
+                    CREATE INDEX IF NOT EXISTS idx_ssh_logs_node_time
+                    ON ssh_operation_logs(node_id, created_at DESC);
+
+                    CREATE TABLE IF NOT EXISTS ssh_command_approvals (
+                        approval_id TEXT PRIMARY KEY,
+                        session_id TEXT NOT NULL,
+                        node_id TEXT NOT NULL,
+                        command TEXT NOT NULL,
+                        status TEXT NOT NULL,
+                        reject_reason TEXT,
+                        requested_by_tool_call_id TEXT,
+                        created_at TEXT NOT NULL,
+                        decided_at TEXT
+                    );
+
+                    CREATE INDEX IF NOT EXISTS idx_ssh_approval_session
+                    ON ssh_command_approvals(session_id, created_at DESC);
                     """
                 )
                 await conn.commit()

@@ -68,12 +68,23 @@ class McpToolContent(BaseModel):
     """MCP tool content"""
     result: Any
 
+class SSHToolContent(BaseModel):
+    """SSH tool content"""
+    node_id: Optional[str] = None
+    node_name: Optional[str] = None
+    command: Optional[str] = None
+    output: Optional[str] = None
+    success: Optional[bool] = None
+    approval_required: bool = False
+    approval_id: Optional[str] = None
+
 ToolContent = Union[
     BrowserToolContent,
     SearchToolContent,
     ShellToolContent,
     FileToolContent,
-    McpToolContent
+    McpToolContent,
+    SSHToolContent
 ]
 
 class ToolEvent(BaseEvent):

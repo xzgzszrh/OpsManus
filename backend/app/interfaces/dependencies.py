@@ -16,6 +16,7 @@ from app.application.services.file_service import FileService
 from app.application.services.auth_service import AuthService
 from app.application.services.token_service import TokenService
 from app.application.services.email_service import EmailService
+from app.application.services.node_service import NodeService
 from app.infrastructure.external.cache import get_cache
 
 # Import all required dependencies for agent service
@@ -27,6 +28,7 @@ from app.infrastructure.repositories.sqlite_agent_repository import SQLiteAgentR
 from app.infrastructure.repositories.sqlite_session_repository import SQLiteSessionRepository
 from app.infrastructure.repositories.file_mcp_repository import FileMCPRepository
 from app.infrastructure.repositories.sqlite_user_repository import SQLiteUserRepository
+from app.infrastructure.repositories.sqlite_node_repository import SQLiteNodeRepository
 
 
 # Configure logging
@@ -55,6 +57,7 @@ def get_agent_service() -> AgentService:
     file_storage = get_file_storage()
     search_engine = get_search_engine()
     mcp_repository = FileMCPRepository()
+    node_service = get_node_service()
     
     # Create AgentService instance
     return AgentService(
@@ -67,6 +70,7 @@ def get_agent_service() -> AgentService:
         file_storage=file_storage,
         search_engine=search_engine,
         mcp_repository=mcp_repository,
+        node_service=node_service,
     )
 
 
@@ -122,6 +126,15 @@ def get_email_service() -> EmailService:
     logger.info("Creating EmailService instance")
     cache = get_cache()
     return EmailService(cache=cache)
+
+
+@lru_cache()
+def get_node_service() -> NodeService:
+    logger.info("Creating NodeService instance")
+    return NodeService(
+        repository=SQLiteNodeRepository(),
+        session_repository=SQLiteSessionRepository(),
+    )
 
 
 async def get_current_user(

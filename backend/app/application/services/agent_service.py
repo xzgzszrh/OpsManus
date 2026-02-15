@@ -21,6 +21,7 @@ from app.domain.utils.json_parser import JsonParser
 from app.domain.models.file import FileInfo
 from app.domain.repositories.mcp_repository import MCPRepository
 from app.domain.models.session import SessionStatus
+from app.application.services.node_service import NodeService
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -36,6 +37,7 @@ class AgentService:
         json_parser: JsonParser,
         file_storage: FileStorage,
         mcp_repository: MCPRepository,
+        node_service: NodeService,
         search_engine: Optional[SearchEngine] = None,
     ):
         logger.info("Initializing AgentService")
@@ -51,6 +53,7 @@ class AgentService:
             json_parser,
             file_storage,
             mcp_repository,
+            node_service,
             search_engine,
         )
         self._llm = llm
@@ -60,7 +63,7 @@ class AgentService:
     async def create_session(self, user_id: str) -> Session:
         logger.info(f"Creating new session for user: {user_id}")
         agent = await self._create_agent()
-        session = Session(agent_id=agent.id, user_id="shared_user")
+        session = Session(agent_id=agent.id, user_id=user_id)
         logger.info(f"Created new Session with ID: {session.id} for user: {user_id}")
         await self._session_repository.save(session)
         return session

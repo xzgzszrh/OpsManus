@@ -92,6 +92,20 @@ class ExecutionAgent(BaseAgent):
                         yield WaitEvent()
                         return
                     continue
+                if (
+                    event.function_name == "ssh_node_exec"
+                    and event.status == ToolStatus.CALLED
+                    and event.function_result
+                    and getattr(event.function_result, "message", None) == "approval_required"
+                ):
+                    yield MessageEvent(
+                        message=(
+                            "SSH command is waiting for user approval in the approval dialog. "
+                            "I will continue after approval result is provided."
+                        )
+                    )
+                    yield WaitEvent()
+                    return
             yield event
         step.status = ExecutionStatus.COMPLETED
 

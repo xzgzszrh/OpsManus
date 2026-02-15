@@ -30,6 +30,8 @@ from app.domain.services.tools.browser import BrowserTool
 from app.domain.services.tools.file import FileTool
 from app.domain.services.tools.message import MessageTool
 from app.domain.services.tools.search import SearchTool
+from app.domain.services.tools.ssh_node import SSHNodeTool
+from app.application.services.node_service import NodeService
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +55,8 @@ class PlanActFlow(BaseFlow):
         browser: Browser,
         json_parser: JsonParser,
         mcp_tool: MCPTool,
+        node_service: NodeService,
+        user_id: str,
         search_engine: Optional[SearchEngine] = None,
     ):
         self._agent_id = agent_id
@@ -67,7 +71,8 @@ class PlanActFlow(BaseFlow):
             BrowserTool(browser),
             FileTool(sandbox),
             MessageTool(),
-            mcp_tool
+            mcp_tool,
+            SSHNodeTool(node_service, user_id=user_id, session_id=session_id),
         ]
         
         # Only add search tool when search_engine is not None
