@@ -31,7 +31,9 @@ from app.domain.services.tools.file import FileTool
 from app.domain.services.tools.message import MessageTool
 from app.domain.services.tools.search import SearchTool
 from app.domain.services.tools.ssh_node import SSHNodeTool
+from app.domain.services.tools.ticket import TicketTool
 from app.application.services.node_service import NodeService
+from app.infrastructure.repositories.sqlite_ticket_repository import SQLiteTicketRepository
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +58,7 @@ class PlanActFlow(BaseFlow):
         json_parser: JsonParser,
         mcp_tool: MCPTool,
         node_service: NodeService,
+        ticket_repository: SQLiteTicketRepository,
         user_id: str,
         search_engine: Optional[SearchEngine] = None,
     ):
@@ -73,6 +76,7 @@ class PlanActFlow(BaseFlow):
             MessageTool(),
             mcp_tool,
             SSHNodeTool(node_service, user_id=user_id, session_id=session_id),
+            TicketTool(repository=ticket_repository, session_id=session_id),
         ]
         
         # Only add search tool when search_engine is not None

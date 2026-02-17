@@ -5,7 +5,7 @@
         <a href="/">
           <div class="flex">
             <Bot :size="30" />
-            <ManusLogoTextIcon />
+            <span class="text-[var(--text-primary)] text-[20px] font-semibold tracking-[0.02em] leading-[30px]">BoringCopliot</span>
           </div>
         </a>
       </div>
@@ -44,7 +44,6 @@ import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Bot } from 'lucide-vue-next'
-import ManusLogoTextIcon from '@/components/icons/ManusLogoTextIcon.vue'
 import LoginForm from '@/components/login/LoginForm.vue'
 import RegisterForm from '@/components/login/RegisterForm.vue'
 import ResetPasswordForm from '@/components/login/ResetPasswordForm.vue'

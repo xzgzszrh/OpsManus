@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from app.domain.models.event import BaseEvent
 from app.domain.models.file import FileInfo
-from app.domain.models.session import Session, SessionStatus
+from app.domain.models.session import Session, SessionStatus, SessionType
 from app.domain.repositories.session_repository import SessionRepository
 from app.infrastructure.storage.sqlite import get_sqlite
 
@@ -17,8 +17,8 @@ class SQLiteSessionRepository(SessionRepository):
                 INSERT INTO sessions (
                     session_id, user_id, sandbox_id, agent_id, task_id, title,
                     unread_message_count, latest_message, latest_message_at,
-                    created_at, updated_at, events_json, files_json, status, is_shared
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    created_at, updated_at, events_json, files_json, status, session_type, is_shared
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(session_id) DO UPDATE SET
                     user_id=excluded.user_id,
                     sandbox_id=excluded.sandbox_id,
@@ -33,6 +33,7 @@ class SQLiteSessionRepository(SessionRepository):
                     events_json=excluded.events_json,
                     files_json=excluded.files_json,
                     status=excluded.status,
+                    session_type=excluded.session_type,
                     is_shared=excluded.is_shared
                 """,
                 (
@@ -50,6 +51,7 @@ class SQLiteSessionRepository(SessionRepository):
                     json.dumps([event.model_dump(mode="json") for event in session.events]),
                     json.dumps([file_info.model_dump(mode="json") for file_info in session.files]),
                     session.status.value,
+                    session.session_type.value,
                     int(session.is_shared),
                 ),
             )
@@ -72,6 +74,7 @@ class SQLiteSessionRepository(SessionRepository):
                 "events": json.loads(row["events_json"]),
                 "files": json.loads(row["files_json"]),
                 "status": row["status"],
+                "session_type": row["session_type"],
                 "is_shared": bool(row["is_shared"]),
             }
         )
@@ -85,9 +88,9 @@ class SQLiteSessionRepository(SessionRepository):
             row = await cursor.fetchone()
             return self._row_to_session(row) if row else None
 
-    async def find_by_user_id(self, user_id: str) -> List[Session]:
+    async def find_by_user_id(self, user_id: str, session_type: Optional[SessionType] = None) -> List[Session]:
         # Single-tenant mode: user_id is ignored, return all sessions.
-        return await self.get_all()
+        return await self.get_all(session_type=session_type)
 
     async def find_by_id_and_user_id(self, session_id: str, user_id: str) -> Optional[Session]:
         # Single-tenant mode: user_id is ignored.
@@ -142,11 +145,17 @@ class SQLiteSessionRepository(SessionRepository):
             await conn.execute("DELETE FROM sessions WHERE session_id = ?", (session_id,))
             await conn.commit()
 
-    async def get_all(self) -> List[Session]:
+    async def get_all(self, session_type: Optional[SessionType] = None) -> List[Session]:
         async with await get_sqlite().connect() as conn:
-            cursor = await conn.execute(
-                "SELECT * FROM sessions ORDER BY latest_message_at DESC"
-            )
+            if session_type:
+                cursor = await conn.execute(
+                    "SELECT * FROM sessions WHERE session_type = ? ORDER BY latest_message_at DESC",
+                    (session_type.value,),
+                )
+            else:
+                cursor = await conn.execute(
+                    "SELECT * FROM sessions ORDER BY latest_message_at DESC"
+                )
             rows = await cursor.fetchall()
             return [self._row_to_session(row) for row in rows]
 

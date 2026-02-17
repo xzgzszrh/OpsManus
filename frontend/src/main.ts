@@ -11,6 +11,8 @@ import { getStoredToken, getCachedAuthProvider } from './api/auth'
 import HomePage from './pages/HomePage.vue'
 import ChatPage from './pages/ChatPage.vue'
 import NodeWorkspacePage from './pages/NodeWorkspacePage.vue'
+import TicketBoardPage from './pages/TicketBoardPage.vue'
+import TicketDetailPage from './pages/TicketDetailPage.vue'
 import LoginPage from './pages/LoginPage.vue'
 import MainLayout from './pages/MainLayout.vue'
 import { configure } from "vue-gtag";
@@ -39,6 +41,16 @@ export const router = createRouter({
         { 
           path: 'nodes/:nodeId?',
           component: NodeWorkspacePage,
+          meta: { requiresAuth: true }
+        },
+        {
+          path: 'tickets',
+          component: TicketBoardPage,
+          meta: { requiresAuth: true }
+        },
+        {
+          path: 'tickets/:ticketId',
+          component: TicketDetailPage,
           meta: { requiresAuth: true }
         },
         {

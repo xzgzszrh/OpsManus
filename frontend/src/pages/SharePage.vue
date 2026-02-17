@@ -5,9 +5,9 @@
         <div
           class="min-h-[52px] px-[16px] py-[10px] sm:px-5 sm:py-3 items-center flex justify-between bg-[var(--background-gray-main)]">
           <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0 sm:flex-none"><a href="/" class="hidden sm:flex">
-              <div class="flex items-center gap-[3px]">
+            <div class="flex items-center gap-[3px]">
                 <Bot :size="24" class="w-6 h-6" />
-                <ManusLogoTextIcon :height="30" :width="65" />
+                <span class="text-[var(--text-primary)] text-[18px] font-semibold tracking-[0.02em] leading-[30px]">BoringCopliot</span>
               </div>
             </a>
             <div
@@ -47,7 +47,7 @@
             <div class="flex items-center gap-0.5 w-full sm:flex-1">
               <div class="w-6 h-6"><Bot :size="24" /></div>
               <div>
-                <p class="text-sm text-[var(--text-primary)]">{{ replayCompleted ? 'Manus 任务回放完成。' : 'Manus 正在回放任务...' }}</p>
+                <p class="text-sm text-[var(--text-primary)]">{{ replayCompleted ? 'BoringCopliot 任务回放完成。' : 'BoringCopliot 正在回放任务...' }}</p>
               </div>
             </div>
             <div class="flex items-center flex-row gap-[8px] max-sm:w-full">
@@ -109,7 +109,6 @@ import {
 import ToolPanel from '../components/ToolPanel.vue'
 import PlanPanel from '../components/PlanPanel.vue';
 import { ArrowDown, FileSearch, Link, Bot } from 'lucide-vue-next';
-import ManusLogoTextIcon from '../components/icons/ManusLogoTextIcon.vue';
 import { showErrorToast, showSuccessToast } from '../utils/toast';
 import type { FileInfo } from '../api/file';
 import { useSessionFileList } from '../composables/useSessionFileList'

@@ -52,12 +52,12 @@ const renderConsole = () => {
   let view = '';
   for (const item of logs.value.slice().reverse()) {
     if (item.actor_type !== 'assistant') continue;
-    view += `<span style=\"color: rgb(0, 187, 0);\">manus@remote:~$</span><span> ${escapeHtml(item.command)}</span>\n`;
+    view += `<span style=\"color: rgb(0, 187, 0);\">boringcopliot@remote:~$</span><span> ${escapeHtml(item.command)}</span>\n`;
     view += `<span>${escapeHtml(item.output || '(empty output)')}</span>\n`;
   }
 
   if (pending || (command && !view.includes(escapeHtml(command)))) {
-    view += `<span style=\"color: rgb(0, 187, 0);\">manus@remote:~$</span><span> ${escapeHtml(command)}</span>\n`;
+    view += `<span style=\"color: rgb(0, 187, 0);\">boringcopliot@remote:~$</span><span> ${escapeHtml(command)}</span>\n`;
     view += `<span>${escapeHtml(output || (pending ? '(waiting for command completion)' : '(empty output)'))}</span>\n`;
   }
 

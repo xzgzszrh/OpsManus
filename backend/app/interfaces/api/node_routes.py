@@ -154,10 +154,16 @@ async def node_overview(
 async def list_node_logs(
     node_id: str,
     limit: int = Query(default=100, ge=1, le=300),
+    include_system: bool = Query(default=False),
     current_user: User = Depends(get_current_user),
     node_service: NodeService = Depends(get_node_service),
 ) -> APIResponse[SSHLogsResponse]:
-    logs = await node_service.list_logs(current_user.id, node_id, limit)
+    logs = await node_service.list_logs(
+        current_user.id,
+        node_id,
+        limit,
+        include_system=include_system,
+    )
     return APIResponse.success(SSHLogsResponse(logs=[SSHLogItem.from_model(log) for log in logs]))
 
 

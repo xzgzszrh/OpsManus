@@ -99,7 +99,7 @@ watch(() => props.open, (v) => v && scrollBottom());
 const close = () => emit('close');
 
 const prompt = (item: SshConsoleRecord) =>
-  item.source === 'assistant' ? 'manus@remote:~$' : 'user@remote:~$';
+  item.source === 'assistant' ? 'boringcopliot@remote:~$' : 'user@remote:~$';
 
 const run = async () => {
   if (!props.nodeId || !props.sessionId || !command.value.trim() || running.value) return;

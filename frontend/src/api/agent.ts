@@ -4,6 +4,7 @@ import { AgentSSEEvent } from '../types/event';
 import { CreateSessionResponse, GetSessionResponse, ShellViewResponse, FileViewResponse, ListSessionResponse, SignedUrlResponse, ShareSessionResponse, SharedSessionResponse } from '../types/response';
 import type { FileInfo } from './file';
 
+export type SessionType = 'chat' | 'ticket';
 
 
 /**
@@ -20,14 +21,19 @@ export async function getSession(sessionId: string): Promise<GetSessionResponse>
   return response.data.data;
 }
 
-export async function getSessions(): Promise<ListSessionResponse> {
-  const response = await apiClient.get<ApiResponse<ListSessionResponse>>('/sessions');
+export async function getSessions(sessionType: SessionType = 'chat'): Promise<ListSessionResponse> {
+  const response = await apiClient.get<ApiResponse<ListSessionResponse>>('/sessions', {
+    params: { session_type: sessionType },
+  });
   return response.data.data;
 }
 
-export async function getSessionsSSE(callbacks?: SSECallbacks<ListSessionResponse>): Promise<() => void> {
+export async function getSessionsSSE(
+  callbacks?: SSECallbacks<ListSessionResponse>,
+  sessionType: SessionType = 'chat'
+): Promise<() => void> {
   return createSSEConnection<ListSessionResponse>(
-    '/sessions',
+    `/sessions?session_type=${sessionType}`,
     {
       method: 'POST'
     },

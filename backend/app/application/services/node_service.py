@@ -167,9 +167,13 @@ class NodeService:
             "raw_output": raw_output,
         }
 
-    async def list_logs(self, user_id: str, node_id: str, limit: int = 100) -> List[SSHOperationLog]:
+    async def list_logs(self, user_id: str, node_id: str, limit: int = 100, include_system: bool = False) -> List[SSHOperationLog]:
         await self.get_node(user_id, node_id)
-        return await self._repository.list_logs(node_id, limit=min(limit, 300))
+        return await self._repository.list_logs(
+            node_id,
+            limit=min(limit, 300),
+            include_system=include_system,
+        )
 
     async def create_approval(
         self,

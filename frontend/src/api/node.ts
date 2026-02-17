@@ -139,9 +139,9 @@ export async function getNodeOverview(nodeId: string): Promise<NodeOverviewRespo
   return response.data.data;
 }
 
-export async function listNodeLogs(nodeId: string, limit: number = 100): Promise<SSHLogItem[]> {
+export async function listNodeLogs(nodeId: string, limit: number = 100, includeSystem: boolean = false): Promise<SSHLogItem[]> {
   const response = await apiClient.get<ApiResponse<SSHLogsResponse>>(`/nodes/${nodeId}/logs`, {
-    params: { limit },
+    params: { limit, include_system: includeSystem },
   });
   return response.data.data.logs;
 }

@@ -1,6 +1,6 @@
 from typing import Optional, Protocol, List
 from datetime import datetime
-from app.domain.models.session import Session, SessionStatus
+from app.domain.models.session import Session, SessionStatus, SessionType
 from app.domain.models.file import FileInfo
 from app.domain.models.event import BaseEvent
 
@@ -15,7 +15,7 @@ class SessionRepository(Protocol):
         """Find a session by its ID"""
         ...
     
-    async def find_by_user_id(self, user_id: str) -> List[Session]:
+    async def find_by_user_id(self, user_id: str, session_type: Optional[SessionType] = None) -> List[Session]:
         """Find all sessions for a specific user"""
         ...
     
@@ -71,6 +71,6 @@ class SessionRepository(Protocol):
         """Delete a session"""
         ...
     
-    async def get_all(self) -> List[Session]:
+    async def get_all(self, session_type: Optional[SessionType] = None) -> List[Session]:
         """Get all sessions"""
         ...

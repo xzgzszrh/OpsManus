@@ -1,3 +1,3 @@
 """
-Manus AI Agent Backend
+BoringCopliot AI Agent Backend
 """

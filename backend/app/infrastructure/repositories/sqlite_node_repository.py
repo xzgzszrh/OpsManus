@@ -141,17 +141,30 @@ class SQLiteNodeRepository:
             )
             await conn.commit()
 
-    async def list_logs(self, node_id: str, limit: int = 100) -> List[SSHOperationLog]:
+    async def list_logs(self, node_id: str, limit: int = 100, include_system: bool = False) -> List[SSHOperationLog]:
         async with await get_sqlite().connect() as conn:
-            cursor = await conn.execute(
-                """
-                SELECT * FROM ssh_operation_logs
-                WHERE node_id = ?
-                ORDER BY created_at DESC
-                LIMIT ?
-                """,
-                (node_id, limit),
-            )
+            if include_system:
+                cursor = await conn.execute(
+                    """
+                    SELECT * FROM ssh_operation_logs
+                    WHERE node_id = ?
+                    ORDER BY created_at DESC
+                    LIMIT ?
+                    """,
+                    (node_id, limit),
+                )
+            else:
+                cursor = await conn.execute(
+                    """
+                    SELECT * FROM ssh_operation_logs
+                    WHERE node_id = ?
+                      AND actor_type != 'system'
+                      AND source != 'monitor'
+                    ORDER BY created_at DESC
+                    LIMIT ?
+                    """,
+                    (node_id, limit),
+                )
             rows = await cursor.fetchall()
             return [
                 SSHOperationLog.model_validate(

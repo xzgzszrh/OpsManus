@@ -8,20 +8,20 @@
               <!-- Email field -->
               <div class="flex flex-col items-start">
                 <div class="w-full flex items-center justify-between gap-[12px] mb-[8px]">
-                  <label for="username"
+                  <label for="email"
                     class="text-[13px] text-[var(--text-primary)] font-medium after:content-[&quot;*&quot;] after:text-[var(--function-error)] after:ml-[4px]">
-                    <span>{{ t('Username') }}</span>
+                    <span>{{ t('Email') }}</span>
                   </label>
                 </div>
-                <input v-model="formData.username"
+                <input v-model="formData.email"
                   class="rounded-[10px] overflow-hidden text-sm leading-[22px] text-[var(--text-primary)] h-10 disabled:cursor-not-allowed placeholder:text-[var(--text-disable)] bg-[var(--fill-input-chat)] pt-1 pr-1.5 pb-1 pl-3 focus:ring-[1.5px] focus:ring-[var(--border-dark)] w-full"
-                  :class="{ 'ring-1 ring-[var(--function-error)]': validationErrors.username }" id="username"
-                  :placeholder="t('Enter username')" type="text" :disabled="isLoading" @input="validateField('username')"
-                  @blur="validateField('username')">
+                  :class="{ 'ring-1 ring-[var(--function-error)]': validationErrors.email }" id="email"
+                  :placeholder="t('Enter your email address')" type="email" :disabled="isLoading" @input="validateField('email')"
+                  @blur="validateField('email')">
                 <div
                   class="text-[13px] text-[var(--function-error)] leading-[18px] overflow-hidden transition-all duration-300 ease-out"
-                  :class="validationErrors.username ? 'opacity-100 max-h-[60px] mt-[2px]' : 'opacity-0 max-h-0 mt-0'">
-                  {{ validationErrors.username }}
+                  :class="validationErrors.email ? 'opacity-100 max-h-[60px] mt-[2px]' : 'opacity-0 max-h-0 mt-0'">
+                  {{ validationErrors.email }}
                 </div>
               </div>
 
@@ -111,7 +111,7 @@ const showPassword = ref(false)
 
 // Form data
 const formData = ref({
-  username: '',
+  email: '',
   password: ''
 })
 
@@ -121,7 +121,7 @@ const validationErrors = ref<Record<string, string>>({})
 // Clear form
 const clearForm = () => {
   formData.value = {
-    username: '',
+    email: '',
     password: ''
   }
   validationErrors.value = {}
@@ -131,9 +131,12 @@ const clearForm = () => {
 const validateField = (field: string) => {
   const errors: Record<string, string> = {}
 
-  if (field === 'username') {
-    if (!formData.value.username.trim()) {
-      errors.username = t('Username is required')
+  if (field === 'email') {
+    const email = formData.value.email.trim().toLowerCase()
+    if (!email) {
+      errors.email = t('Email is required')
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = t('Please enter a valid email address')
     }
   }
 
@@ -158,12 +161,14 @@ const validateField = (field: string) => {
 // Validate entire form
 const validateForm = () => {
   const data = {
-    username: formData.value.username,
+    email: formData.value.email.trim().toLowerCase(),
     password: formData.value.password
   }
   validationErrors.value = {}
-  if (!data.username.trim()) {
-    validationErrors.value.username = t('Username is required')
+  if (!data.email) {
+    validationErrors.value.email = t('Email is required')
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+    validationErrors.value.email = t('Please enter a valid email address')
   }
   const result = validateUserInput({ password: data.password })
   if (result.errors.password) {
@@ -175,7 +180,7 @@ const validateForm = () => {
 
 // Check if form is valid
 const isFormValid = computed(() => {
-  const hasRequiredFields = formData.value.username.trim() && formData.value.password.trim()
+  const hasRequiredFields = formData.value.email.trim() && formData.value.password.trim()
   const hasNoErrors = Object.keys(validationErrors.value).length === 0
   return hasRequiredFields && hasNoErrors
 })
@@ -187,8 +192,9 @@ const handleSubmit = async () => {
   }
 
   try {
+    const normalizedEmail = formData.value.email.trim().toLowerCase()
     await login({
-      username: formData.value.username,
+      username: normalizedEmail,
       password: formData.value.password
     })
     
