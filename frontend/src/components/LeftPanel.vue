@@ -24,8 +24,9 @@
         </button>
         <div class="flex items-center gap-1 flex-1 min-w-0">
           <button v-for="menu in menus" :key="menu.key" @click="switchMenu(menu.key)"
-            class="flex-1 h-8 rounded-lg text-sm border"
+            class="flex-1 h-8 rounded-lg text-sm border flex items-center justify-center gap-1.5"
             :class="activeTab === menu.key ? 'bg-[var(--fill-tsp-primary)] border-[var(--border-main)] text-[var(--text-primary)]' : 'bg-transparent border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--fill-tsp-gray-main)]'">
+            <component :is="menu.icon" class="h-4 w-4 shrink-0" />
             {{ menu.label }}
           </button>
         </div>
@@ -52,18 +53,26 @@
       </div>
 
       <div v-if="activeTab === 'node'" class="flex flex-col flex-1 min-h-0 overflow-auto pt-2 pb-5 overflow-x-hidden">
-        <button v-for="node in nodes" :key="node.node_id" @click="openNode(node.node_id)"
-          class="mx-3 mb-2 rounded-xl border p-3 text-left transition"
-          :class="isNodeActive(node.node_id) ? 'bg-[var(--background-white-main)] border-[var(--border-main)] shadow-[0_8px_20px_var(--shadow-XS)]' : 'hover:bg-[var(--fill-tsp-gray-main)] border-transparent'">
-          <div class="flex items-center justify-between">
-            <div class="text-sm font-semibold truncate text-[var(--text-primary)]">{{ node.name }}</div>
-            <span class="text-[10px] px-2 py-0.5 rounded-full"
-              :class="node.ssh_enabled ? 'bg-emerald-100 text-emerald-700' : 'bg-zinc-100 text-zinc-500'">
-              {{ node.ssh_enabled ? 'SSH ON' : 'SSH OFF' }}
-            </span>
-          </div>
-          <div class="text-xs text-[var(--text-tertiary)] truncate mt-1">
-            {{ node.description || node.remarks || '暂无描述' }}
+        <button v-for="node in nodes" :key="node.node_id" @click="openNode(node.node_id)" class="px-2 w-full text-left block">
+          <div
+            class="group flex h-14 items-center gap-2 rounded-[10px] px-2 transition-all border"
+            :class="isNodeActive(node.node_id) ? 'bg-[var(--background-white-main)] border-[var(--border-main)] shadow-[0_8px_20px_var(--shadow-XS)]' : 'border-transparent hover:bg-[var(--fill-tsp-gray-main)] hover:border-[var(--border-light)]'"
+          >
+            <div class="h-8 w-8 rounded-full flex items-center justify-center relative bg-[var(--fill-tsp-white-dark)]">
+              <Server class="h-4 w-4 text-[var(--icon-secondary)]" />
+            </div>
+            <div class="min-w-20 flex-1">
+              <div class="flex items-center gap-1 overflow-hidden">
+                <span class="truncate text-sm font-medium text-[var(--text-primary)] flex-1 min-w-0">{{ node.name || '未命名节点' }}</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap leading-4"
+                  :class="node.ssh_enabled ? 'bg-emerald-100 text-emerald-700' : 'bg-zinc-100 text-zinc-500'">
+                  {{ node.ssh_enabled ? 'SSH ON' : 'SSH OFF' }}
+                </span>
+              </div>
+              <div class="text-xs text-[var(--text-tertiary)] truncate mt-0.5">
+                {{ node.description || node.remarks || '暂无描述' }}
+              </div>
+            </div>
           </div>
         </button>
         <div v-if="nodes.length === 0" class="flex-1 flex items-center justify-center text-sm text-[var(--text-tertiary)] px-5 text-center">
@@ -71,6 +80,34 @@
         </div>
       </div>
 
+      <div v-else-if="activeTab === 'task' && tickets.length > 0" class="flex flex-col flex-1 min-h-0 overflow-auto pt-2 pb-5 overflow-x-hidden">
+        <button
+          v-for="ticket in tickets"
+          :key="ticket.ticket_id"
+          class="px-2 w-full text-left block"
+          @click="openTicketBoard(ticket.ticket_id)"
+        >
+          <div
+            class="group flex h-14 items-center gap-2 rounded-[10px] px-2 transition-all border"
+            :class="isCurrentTicket(ticket.ticket_id) ? 'bg-[var(--background-white-main)] border-[var(--border-main)] shadow-[0_8px_20px_var(--shadow-XS)]' : 'border-transparent hover:bg-[var(--fill-tsp-gray-main)] hover:border-[var(--border-light)]'"
+          >
+            <div class="h-8 w-8 rounded-full flex items-center justify-center relative bg-[var(--fill-tsp-white-dark)]">
+              <Ticket class="h-4 w-4 text-[var(--icon-secondary)]" />
+            </div>
+            <div class="min-w-20 flex-1">
+              <div class="flex items-center gap-1 overflow-hidden">
+                <span class="truncate text-sm font-medium text-[var(--text-primary)] min-w-0 flex-1">{{ ticket.title || '未命名工单' }}</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap shrink-0 leading-4" :class="ticketStatusClass(ticket.status)">
+                  {{ ticketStatusLabel(ticket.status) }}
+                </span>
+              </div>
+              <div class="text-xs text-[var(--text-tertiary)] truncate mt-0.5">
+                #{{ ticket.ticket_id }}
+              </div>
+            </div>
+          </div>
+        </button>
+      </div>
       <div v-else-if="displaySessions.length > 0" class="flex flex-col flex-1 min-h-0 overflow-auto pt-2 pb-5 overflow-x-hidden">
         <SessionItem v-for="session in displaySessions" :key="session.session_id" :session="session"
           @deleted="handleSessionDeleted" />
@@ -88,12 +125,13 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { PanelLeft, Plus, Command, MessageSquareDashed } from 'lucide-vue-next';
+import { PanelLeft, Plus, Command, MessageSquareDashed, MessageSquare, ListTodo, Server, Ticket } from 'lucide-vue-next';
 import SessionItem from './SessionItem.vue';
 import { useLeftPanel } from '../composables/useLeftPanel';
 import { getSessionsSSE, getSessions } from '../api/agent';
 import { listServerNodes, type ServerNode } from '@/api/node';
 import { ListSessionItem, SessionStatus } from '../types/response';
+import { listTickets, type TicketItem, type TicketStatus } from '@/api/ticket';
 import { useI18n } from 'vue-i18n';
 import { useOpsMenu, type OpsMenuTab } from '@/composables/useOpsMenu';
 import { useSettingsDialog } from '@/composables/useSettingsDialog';
@@ -106,29 +144,32 @@ const { activeTab, setActiveTab } = useOpsMenu();
 const { openSettingsDialog } = useSettingsDialog();
 
 const sessions = ref<ListSessionItem[]>([]);
+const tickets = ref<TicketItem[]>([]);
 const nodes = ref<ServerNode[]>([]);
 const cancelGetSessionsSSE = ref<(() => void) | null>(null);
 const nodeRefreshTimer = ref<number | null>(null);
 
-const menus: { key: OpsMenuTab; label: string }[] = [
-  { key: 'chat', label: '对话' },
-  { key: 'task', label: '任务' },
-  { key: 'node', label: '节点' },
+const menus: { key: OpsMenuTab; label: string; icon: any }[] = [
+  { key: 'chat', label: '对话', icon: MessageSquare },
+  { key: 'task', label: '任务', icon: ListTodo },
+  { key: 'node', label: '节点', icon: Server },
 ];
 
 const displaySessions = computed(() => {
   if (activeTab.value === 'chat') return sessions.value;
+  if (activeTab.value === 'task') return [];
   return [...sessions.value].sort((a, b) => {
     const aRunning = a.status === SessionStatus.RUNNING || a.status === SessionStatus.PENDING;
     const bRunning = b.status === SessionStatus.RUNNING || b.status === SessionStatus.PENDING;
-    if (aRunning === bRunning) return b.created_at - a.created_at;
+    if (aRunning === bRunning) return (b.latest_message_at || 0) - (a.latest_message_at || 0);
     return aRunning ? -1 : 1;
   });
 });
 
 const primaryActionLabel = computed(() => {
   if (activeTab.value === 'node') return '添加节点';
-  return t('New Task');
+  if (activeTab.value === 'task') return '新建工单';
+  return '新建对话';
 });
 
 const emptyHint = computed(() => {
@@ -174,9 +215,21 @@ const loadNodes = async () => {
   }
 };
 
+const loadTickets = async () => {
+  try {
+    tickets.value = await listTickets();
+  } catch (error) {
+    console.error('Failed to fetch tickets:', error);
+  }
+};
+
 const handlePrimaryAction = () => {
   if (activeTab.value === 'node') {
     openSettingsDialog('nodes');
+    return;
+  }
+  if (activeTab.value === 'task') {
+    router.push('/chat/tickets?create=1');
     return;
   }
   router.push('/');
@@ -190,7 +243,11 @@ const switchMenu = (menu: OpsMenuTab) => {
     }
     return;
   }
-  if (route.path.startsWith('/chat/nodes')) {
+  if (menu === 'task') {
+    router.push('/chat/tickets');
+    return;
+  }
+  if (route.path.startsWith('/chat/nodes') || route.path.startsWith('/chat/tickets')) {
     router.push('/chat');
   }
 };
@@ -202,6 +259,29 @@ const openNode = (nodeId: string) => {
 
 const handleSessionDeleted = (sessionId: string) => {
   sessions.value = sessions.value.filter((session) => session.session_id !== sessionId);
+};
+
+const openTicketBoard = (ticketId: string) => {
+  setActiveTab('task');
+  router.push(`/chat/tickets/${ticketId}`);
+};
+
+const isCurrentTicket = (ticketId: string) => {
+  return route.path === `/chat/tickets/${ticketId}`;
+};
+
+const ticketStatusLabel = (status: TicketStatus) => {
+  if (status === 'open') return '待处理';
+  if (status === 'processing') return '处理中';
+  if (status === 'waiting_user') return '待补充';
+  return '已完成';
+};
+
+const ticketStatusClass = (status: TicketStatus) => {
+  if (status === 'open') return 'bg-zinc-100 text-zinc-700';
+  if (status === 'processing') return 'bg-amber-100 text-amber-700';
+  if (status === 'waiting_user') return 'bg-sky-100 text-sky-700';
+  return 'bg-emerald-100 text-emerald-700';
 };
 
 const handleKeydown = (event: KeyboardEvent) => {
@@ -217,7 +297,10 @@ watch(() => route.path, async (path) => {
   if (path.startsWith('/chat/nodes')) {
     setActiveTab('node');
     await loadNodes();
-  } else if (activeTab.value === 'node') {
+  } else if (path.startsWith('/chat/tickets')) {
+    setActiveTab('task');
+    await loadTickets();
+  } else {
     setActiveTab('chat');
   }
   await updateSessions();
@@ -226,10 +309,13 @@ watch(() => route.path, async (path) => {
 onMounted(async () => {
   fetchSessions();
   loadNodes();
+  loadTickets();
   nodeRefreshTimer.value = window.setInterval(loadNodes, 20000);
   window.addEventListener('keydown', handleKeydown);
   if (route.path.startsWith('/chat/nodes')) {
     setActiveTab('node');
+  } else if (route.path.startsWith('/chat/tickets')) {
+    setActiveTab('task');
   }
 });
 

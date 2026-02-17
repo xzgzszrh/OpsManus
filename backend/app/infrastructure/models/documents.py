@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from app.domain.models.agent import Agent
 from app.domain.models.memory import Memory
 from app.domain.models.event import AgentEvent
-from app.domain.models.session import Session, SessionStatus
+from app.domain.models.session import Session, SessionStatus, SessionType
 from app.domain.models.file import FileInfo
 from app.domain.models.user import User, UserRole
 from pymongo import IndexModel, ASCENDING
@@ -95,6 +95,7 @@ class SessionDocument(BaseDocument[Session], id_field="session_id", domain_model
     updated_at: datetime = datetime.now(timezone.utc)
     events: List[AgentEvent]
     status: SessionStatus
+    session_type: SessionType = SessionType.CHAT
     files: List[FileInfo] = []
     is_shared: Optional[bool] = False
     class Settings:

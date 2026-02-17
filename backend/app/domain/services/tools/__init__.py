@@ -6,6 +6,7 @@ from app.domain.services.tools.message import MessageTool
 from app.domain.services.tools.file import FileTool
 from app.domain.services.tools.mcp import MCPTool
 from app.domain.services.tools.ssh_node import SSHNodeTool
+from app.domain.services.tools.ticket import TicketTool
 
 __all__ = [
     'BaseTool',
@@ -16,4 +17,5 @@ __all__ = [
     'FileTool',
     'MCPTool',
     'SSHNodeTool',
+    'TicketTool',
 ]

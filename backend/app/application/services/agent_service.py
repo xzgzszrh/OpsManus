@@ -1,7 +1,7 @@
 from typing import AsyncGenerator, Optional, List
 import logging
 from datetime import datetime
-from app.domain.models.session import Session
+from app.domain.models.session import Session, SessionType
 from app.domain.repositories.session_repository import SessionRepository
 
 from app.interfaces.schemas.session import ShellViewResponse
@@ -22,6 +22,7 @@ from app.domain.models.file import FileInfo
 from app.domain.repositories.mcp_repository import MCPRepository
 from app.domain.models.session import SessionStatus
 from app.application.services.node_service import NodeService
+from app.infrastructure.repositories.sqlite_ticket_repository import SQLiteTicketRepository
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -38,6 +39,7 @@ class AgentService:
         file_storage: FileStorage,
         mcp_repository: MCPRepository,
         node_service: NodeService,
+        ticket_repository: SQLiteTicketRepository,
         search_engine: Optional[SearchEngine] = None,
     ):
         logger.info("Initializing AgentService")
@@ -54,16 +56,17 @@ class AgentService:
             file_storage,
             mcp_repository,
             node_service,
+            ticket_repository,
             search_engine,
         )
         self._llm = llm
         self._search_engine = search_engine
         self._sandbox_cls = sandbox_cls
     
-    async def create_session(self, user_id: str) -> Session:
+    async def create_session(self, user_id: str, session_type: SessionType = SessionType.CHAT) -> Session:
         logger.info(f"Creating new session for user: {user_id}")
         agent = await self._create_agent()
-        session = Session(agent_id=agent.id, user_id=user_id)
+        session = Session(agent_id=agent.id, user_id=user_id, session_type=session_type)
         logger.info(f"Created new Session with ID: {session.id} for user: {user_id}")
         await self._session_repository.save(session)
         return session
@@ -113,10 +116,10 @@ class AgentService:
             logger.error(f"Session {session_id} not found for user {user_id}")
         return session
     
-    async def get_all_sessions(self, user_id: str) -> List[Session]:
+    async def get_all_sessions(self, user_id: str, session_type: Optional[SessionType] = SessionType.CHAT) -> List[Session]:
         """Get all sessions for a specific user"""
         logger.info(f"Getting all sessions for user {user_id}")
-        return await self._session_repository.find_by_user_id(user_id)
+        return await self._session_repository.find_by_user_id(user_id, session_type=session_type)
 
     async def delete_session(self, session_id: str, user_id: str) -> None:
         """Delete a session, ensuring it belongs to the user"""

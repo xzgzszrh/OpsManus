@@ -1,6 +1,6 @@
 from typing import Optional, List
 from datetime import datetime, UTC
-from app.domain.models.session import Session, SessionStatus
+from app.domain.models.session import Session, SessionStatus, SessionType
 from app.domain.models.file import FileInfo
 from app.domain.repositories.session_repository import SessionRepository
 from app.domain.models.event import BaseEvent
@@ -35,11 +35,12 @@ class MongoSessionRepository(SessionRepository):
         )
         return mongo_session.to_domain() if mongo_session else None
     
-    async def find_by_user_id(self, user_id: str) -> List[Session]:
+    async def find_by_user_id(self, user_id: str, session_type: Optional[SessionType] = None) -> List[Session]:
         """Find all sessions for a specific user"""
-        mongo_sessions = await SessionDocument.find(
-            SessionDocument.user_id == user_id
-        ).sort("-latest_message_at").to_list()
+        query = SessionDocument.find(SessionDocument.user_id == user_id)
+        if session_type:
+            query = query.find(SessionDocument.session_type == session_type)
+        mongo_sessions = await query.sort("-latest_message_at").to_list()
         return [mongo_session.to_domain() for mongo_session in mongo_sessions]
     
     async def find_by_id_and_user_id(self, session_id: str, user_id: str) -> Optional[Session]:
@@ -122,9 +123,12 @@ class MongoSessionRepository(SessionRepository):
         if mongo_session:
             await mongo_session.delete()
 
-    async def get_all(self) -> List[Session]:
+    async def get_all(self, session_type: Optional[SessionType] = None) -> List[Session]:
         """Get all sessions"""
-        mongo_sessions = await SessionDocument.find().sort("-latest_message_at").to_list()
+        query = SessionDocument.find()
+        if session_type:
+            query = query.find(SessionDocument.session_type == session_type)
+        mongo_sessions = await query.sort("-latest_message_at").to_list()
         return [mongo_session.to_domain() for mongo_session in mongo_sessions]
     
     async def update_status(self, session_id: str, status: SessionStatus) -> None:
@@ -176,4 +180,3 @@ class MongoSessionRepository(SessionRepository):
         )
         if not result:
             raise ValueError(f"Session {session_id} not found")
-

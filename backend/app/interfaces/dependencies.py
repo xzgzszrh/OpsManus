@@ -17,6 +17,7 @@ from app.application.services.auth_service import AuthService
 from app.application.services.token_service import TokenService
 from app.application.services.email_service import EmailService
 from app.application.services.node_service import NodeService
+from app.application.services.ticket_service import TicketService
 from app.infrastructure.external.cache import get_cache
 
 # Import all required dependencies for agent service
@@ -29,6 +30,7 @@ from app.infrastructure.repositories.sqlite_session_repository import SQLiteSess
 from app.infrastructure.repositories.file_mcp_repository import FileMCPRepository
 from app.infrastructure.repositories.sqlite_user_repository import SQLiteUserRepository
 from app.infrastructure.repositories.sqlite_node_repository import SQLiteNodeRepository
+from app.infrastructure.repositories.sqlite_ticket_repository import SQLiteTicketRepository
 
 
 # Configure logging
@@ -58,6 +60,7 @@ def get_agent_service() -> AgentService:
     search_engine = get_search_engine()
     mcp_repository = FileMCPRepository()
     node_service = get_node_service()
+    ticket_repository = SQLiteTicketRepository()
     
     # Create AgentService instance
     return AgentService(
@@ -71,6 +74,7 @@ def get_agent_service() -> AgentService:
         search_engine=search_engine,
         mcp_repository=mcp_repository,
         node_service=node_service,
+        ticket_repository=ticket_repository,
     )
 
 
@@ -134,6 +138,15 @@ def get_node_service() -> NodeService:
     return NodeService(
         repository=SQLiteNodeRepository(),
         session_repository=SQLiteSessionRepository(),
+    )
+
+
+@lru_cache()
+def get_ticket_service() -> TicketService:
+    logger.info("Creating TicketService instance")
+    return TicketService(
+        repository=SQLiteTicketRepository(),
+        agent_service=get_agent_service(),
     )
 
 

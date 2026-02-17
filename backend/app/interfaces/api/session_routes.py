@@ -23,6 +23,7 @@ from app.interfaces.schemas.resource import AccessTokenRequest, SignedUrlRespons
 from app.interfaces.schemas.event import EventMapper
 from app.domain.models.file import FileInfo
 from app.domain.models.user import User
+from app.domain.models.session import SessionType
 
 logger = logging.getLogger(__name__)
 SESSION_POLL_INTERVAL = 5
@@ -87,10 +88,11 @@ async def clear_unread_message_count(
 
 @router.get("", response_model=APIResponse[ListSessionResponse])
 async def get_all_sessions(
+    session_type: SessionType = Query(default=SessionType.CHAT),
     current_user: User = Depends(get_current_user),
     agent_service: AgentService = Depends(get_agent_service)
 ) -> APIResponse[ListSessionResponse]:
-    sessions = await agent_service.get_all_sessions(current_user.id)
+    sessions = await agent_service.get_all_sessions(current_user.id, session_type=session_type)
     session_items = [
         ListSessionItem(
             session_id=session.id,
@@ -106,12 +108,13 @@ async def get_all_sessions(
 
 @router.post("")
 async def stream_sessions(
+    session_type: SessionType = Query(default=SessionType.CHAT),
     current_user: User = Depends(get_current_user),
     agent_service: AgentService = Depends(get_agent_service)
 ) -> EventSourceResponse:
     async def event_generator() -> AsyncGenerator[ServerSentEvent, None]:
         while True:
-            sessions = await agent_service.get_all_sessions(current_user.id)
+            sessions = await agent_service.get_all_sessions(current_user.id, session_type=session_type)
             session_items = [
                 ListSessionItem(
                     session_id=session.id,

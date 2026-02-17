@@ -81,6 +81,7 @@ class SQLiteStorage:
                         events_json TEXT NOT NULL,
                         files_json TEXT NOT NULL,
                         status TEXT NOT NULL,
+                        session_type TEXT NOT NULL DEFAULT 'chat',
                         is_shared INTEGER NOT NULL DEFAULT 0
                     );
 
@@ -150,8 +151,61 @@ class SQLiteStorage:
 
                     CREATE INDEX IF NOT EXISTS idx_ssh_approval_session
                     ON ssh_command_approvals(session_id, created_at DESC);
+
+                    CREATE TABLE IF NOT EXISTS tickets (
+                        ticket_id TEXT PRIMARY KEY,
+                        user_id TEXT NOT NULL,
+                        title TEXT NOT NULL,
+                        description TEXT NOT NULL,
+                        status TEXT NOT NULL,
+                        priority TEXT NOT NULL DEFAULT 'p2',
+                        urgency TEXT NOT NULL DEFAULT 'medium',
+                        tags_json TEXT NOT NULL DEFAULT '[]',
+                        node_ids_json TEXT NOT NULL,
+                        plugin_ids_json TEXT NOT NULL,
+                        session_id TEXT NOT NULL,
+                        comments_json TEXT NOT NULL,
+                        events_json TEXT NOT NULL DEFAULT '[]',
+                        estimated_minutes INTEGER,
+                        spent_minutes INTEGER NOT NULL DEFAULT 0,
+                        sla_due_at TEXT,
+                        first_response_at TEXT,
+                        resolved_at TEXT,
+                        reopen_count INTEGER NOT NULL DEFAULT 0,
+                        created_at TEXT NOT NULL,
+                        updated_at TEXT NOT NULL
+                    );
+
+                    CREATE INDEX IF NOT EXISTS idx_tickets_user_updated
+                    ON tickets(user_id, updated_at DESC);
+
+                    CREATE INDEX IF NOT EXISTS idx_tickets_session
+                    ON tickets(session_id);
                     """
                 )
+                # Lightweight migrations for existing DBs.
+                cursor = await conn.execute("PRAGMA table_info(sessions)")
+                columns = [row[1] for row in await cursor.fetchall()]
+                if "session_type" not in columns:
+                    await conn.execute("ALTER TABLE sessions ADD COLUMN session_type TEXT NOT NULL DEFAULT 'chat'")
+
+                ticket_cursor = await conn.execute("PRAGMA table_info(tickets)")
+                ticket_columns = [row[1] for row in await ticket_cursor.fetchall()]
+                ticket_migrations = [
+                    ("priority", "ALTER TABLE tickets ADD COLUMN priority TEXT NOT NULL DEFAULT 'p2'"),
+                    ("urgency", "ALTER TABLE tickets ADD COLUMN urgency TEXT NOT NULL DEFAULT 'medium'"),
+                    ("tags_json", "ALTER TABLE tickets ADD COLUMN tags_json TEXT NOT NULL DEFAULT '[]'"),
+                    ("events_json", "ALTER TABLE tickets ADD COLUMN events_json TEXT NOT NULL DEFAULT '[]'"),
+                    ("estimated_minutes", "ALTER TABLE tickets ADD COLUMN estimated_minutes INTEGER"),
+                    ("spent_minutes", "ALTER TABLE tickets ADD COLUMN spent_minutes INTEGER NOT NULL DEFAULT 0"),
+                    ("sla_due_at", "ALTER TABLE tickets ADD COLUMN sla_due_at TEXT"),
+                    ("first_response_at", "ALTER TABLE tickets ADD COLUMN first_response_at TEXT"),
+                    ("resolved_at", "ALTER TABLE tickets ADD COLUMN resolved_at TEXT"),
+                    ("reopen_count", "ALTER TABLE tickets ADD COLUMN reopen_count INTEGER NOT NULL DEFAULT 0"),
+                ]
+                for column_name, ddl in ticket_migrations:
+                    if column_name not in ticket_columns:
+                        await conn.execute(ddl)
                 await conn.commit()
 
             self._initialized = True

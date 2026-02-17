@@ -37,6 +37,7 @@ from app.domain.services.tools.mcp import MCPTool
 from app.domain.models.tool_result import ToolResult
 from app.domain.models.search import SearchResults
 from app.application.services.node_service import NodeService
+from app.infrastructure.repositories.sqlite_ticket_repository import SQLiteTicketRepository
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +57,7 @@ class AgentTaskRunner(TaskRunner):
         file_storage: FileStorage,
         mcp_repository: MCPRepository,
         node_service: NodeService,
+        ticket_repository: SQLiteTicketRepository,
         search_engine: Optional[SearchEngine] = None,
     ):
         self._session_id = session_id
@@ -71,6 +73,7 @@ class AgentTaskRunner(TaskRunner):
         self._file_storage = file_storage
         self._mcp_repository = mcp_repository
         self._node_service = node_service
+        self._ticket_repository = ticket_repository
         self._mcp_tool = MCPTool()
         self._flow = PlanActFlow(
             self._agent_id,
@@ -83,6 +86,7 @@ class AgentTaskRunner(TaskRunner):
             self._json_parser,
             self._mcp_tool,
             self._node_service,
+            self._ticket_repository,
             self._user_id,
             self._search_engine,
         )
@@ -221,6 +225,11 @@ class AgentTaskRunner(TaskRunner):
                         approval_required=bool(result_data.get("approval_required")),
                         approval_id=result_data.get("approval_id"),
                     )
+                elif event.tool_name == "ticket":
+                    result_data = {}
+                    if event.function_result and hasattr(event.function_result, "data") and event.function_result.data:
+                        result_data = event.function_result.data
+                    event.tool_content = McpToolContent(result=result_data)
                 else:
                     logger.warning(f"Agent {self._agent_id} received unknown tool event: {event.tool_name}")
         except Exception as e:

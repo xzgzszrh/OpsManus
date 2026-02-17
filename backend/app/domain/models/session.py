@@ -16,6 +16,11 @@ class SessionStatus(str, Enum):
     COMPLETED = "completed"
 
 
+class SessionType(str, Enum):
+    CHAT = "chat"
+    TICKET = "ticket"
+
+
 class Session(BaseModel):
     """Session model"""
     id: str = Field(default_factory=lambda: uuid.uuid4().hex[:16])
@@ -32,6 +37,7 @@ class Session(BaseModel):
     events: List[AgentEvent] = []
     files: List[FileInfo] = []
     status: SessionStatus = SessionStatus.PENDING
+    session_type: SessionType = SessionType.CHAT
     is_shared: bool = False  # Whether this session is shared publicly
 
     def get_last_plan(self) -> Optional[Plan]:
