@@ -103,6 +103,8 @@ export default {
   'Register to Manus': 'Register to BoringCopliot',
   'Full Name': 'Full Name',
   'Email': 'Email',
+  'Email is required': 'Email is required',
+  'Enter your email address': 'Enter your email address',
   'Username': 'Username',
   'Enter username': 'Enter username',
   'Username is required': 'Username is required',

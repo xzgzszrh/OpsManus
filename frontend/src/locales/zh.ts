@@ -103,6 +103,8 @@ export default {
   'Register to Manus': '注册 BoringCopliot',
   'Full Name': '姓名',
   'Email': '邮箱',
+  'Email is required': '邮箱不能为空',
+  'Enter your email address': '请输入邮箱地址',
   'Username': '用户名',
   'Enter username': '请输入用户名',
   'Username is required': '用户名不能为空',
