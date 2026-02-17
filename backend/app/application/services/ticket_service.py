@@ -86,7 +86,7 @@ class TicketService:
         return ticket
 
     async def list_tickets(self, user_id: str) -> List[Ticket]:
-        return await self._repository.list_by_user_id(user_id)
+        return await self._repository.list_summary_by_user_id(user_id)
 
     async def get_ticket(self, ticket_id: str, user_id: str) -> Ticket:
         ticket = await self._repository.find_by_id(ticket_id, user_id)

@@ -7,7 +7,20 @@ from app.infrastructure.storage.sqlite import get_sqlite
 
 
 class SQLiteTicketRepository:
-    def _row_to_ticket(self, row) -> Ticket:
+    @staticmethod
+    def _loads_json(value: Optional[str], default):
+        if not value:
+            return default
+        return json.loads(value)
+
+    def _row_to_ticket(self, row, *, include_history: bool = True) -> Ticket:
+        row_keys = set(row.keys())
+        comments = []
+        events = []
+        if include_history:
+            comments = self._loads_json(row["comments_json"] if "comments_json" in row_keys else "[]", [])
+            events = self._loads_json(row["events_json"] if "events_json" in row_keys else "[]", [])
+
         return Ticket.model_validate(
             {
                 "id": row["ticket_id"],
@@ -17,12 +30,12 @@ class SQLiteTicketRepository:
                 "status": row["status"],
                 "priority": row["priority"],
                 "urgency": row["urgency"],
-                "tags": json.loads(row["tags_json"]),
-                "node_ids": json.loads(row["node_ids_json"]),
-                "plugin_ids": json.loads(row["plugin_ids_json"]),
+                "tags": self._loads_json(row["tags_json"], []),
+                "node_ids": self._loads_json(row["node_ids_json"], []),
+                "plugin_ids": self._loads_json(row["plugin_ids_json"], []),
                 "session_id": row["session_id"],
-                "comments": json.loads(row["comments_json"]),
-                "events": json.loads(row["events_json"]),
+                "comments": comments,
+                "events": events,
                 "estimated_minutes": row["estimated_minutes"],
                 "spent_minutes": row["spent_minutes"],
                 "sla_due_at": row["sla_due_at"],
@@ -125,6 +138,39 @@ class SQLiteTicketRepository:
             )
             rows = await cursor.fetchall()
             return [self._row_to_ticket(row) for row in rows]
+
+    async def list_summary_by_user_id(self, user_id: str) -> List[Ticket]:
+        async with await get_sqlite().connect() as conn:
+            cursor = await conn.execute(
+                """
+                SELECT
+                    ticket_id,
+                    user_id,
+                    title,
+                    description,
+                    status,
+                    priority,
+                    urgency,
+                    tags_json,
+                    node_ids_json,
+                    plugin_ids_json,
+                    session_id,
+                    estimated_minutes,
+                    spent_minutes,
+                    sla_due_at,
+                    first_response_at,
+                    resolved_at,
+                    reopen_count,
+                    created_at,
+                    updated_at
+                FROM tickets
+                WHERE user_id = ?
+                ORDER BY updated_at DESC
+                """,
+                (user_id,),
+            )
+            rows = await cursor.fetchall()
+            return [self._row_to_ticket(row, include_history=False) for row in rows]
 
     async def append_comment(self, ticket_id: str, comment: TicketComment) -> Ticket:
         ticket = await self.find_by_id(ticket_id)

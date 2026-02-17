@@ -23,7 +23,7 @@ async def list_tickets(
     tickets = await ticket_service.list_tickets(current_user.id)
     return APIResponse.success(
         ListTicketsResponse(
-            tickets=[TicketResponse.from_model(ticket, include_comments=False) for ticket in tickets]
+            tickets=[TicketResponse.from_model(ticket, include_comments=False, include_events=False) for ticket in tickets]
         )
     )
 

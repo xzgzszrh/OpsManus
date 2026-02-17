@@ -95,7 +95,12 @@ class TicketResponse(BaseModel):
     updated_at: datetime
 
     @classmethod
-    def from_model(cls, ticket: Ticket, include_comments: bool = True) -> "TicketResponse":
+    def from_model(
+        cls,
+        ticket: Ticket,
+        include_comments: bool = True,
+        include_events: bool = True,
+    ) -> "TicketResponse":
         return cls(
             ticket_id=ticket.id,
             title=ticket.title,
@@ -108,7 +113,7 @@ class TicketResponse(BaseModel):
             plugin_ids=ticket.plugin_ids,
             session_id=ticket.session_id,
             comments=[TicketCommentResponse.from_model(comment) for comment in ticket.comments] if include_comments else [],
-            events=[TicketEventResponse.from_model(event) for event in ticket.events],
+            events=[TicketEventResponse.from_model(event) for event in ticket.events] if include_events else [],
             estimated_minutes=ticket.estimated_minutes,
             spent_minutes=ticket.spent_minutes,
             sla_due_at=ticket.sla_due_at,

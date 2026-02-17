@@ -302,10 +302,22 @@ const filteredTickets = computed(() => {
 
 const metrics = computed(() => {
   const total = tickets.value.length;
-  const open = tickets.value.filter((t) => t.status === 'open').length;
-  const processing = tickets.value.filter((t) => t.status === 'processing').length;
-  const waiting = tickets.value.filter((t) => t.status === 'waiting_user').length;
-  const overdue = tickets.value.filter((t) => t.sla_due_at && new Date(t.sla_due_at).getTime() < Date.now() && t.status !== 'resolved').length;
+  let open = 0;
+  let processing = 0;
+  let waiting = 0;
+  let overdue = 0;
+  const now = Date.now();
+
+  for (const ticket of tickets.value) {
+    if (ticket.status === 'open') open += 1;
+    else if (ticket.status === 'processing') processing += 1;
+    else if (ticket.status === 'waiting_user') waiting += 1;
+
+    if (ticket.sla_due_at && ticket.status !== 'resolved' && new Date(ticket.sla_due_at).getTime() < now) {
+      overdue += 1;
+    }
+  }
+
   return [
     { label: '总工单', value: total },
     { label: '待处理', value: open },
