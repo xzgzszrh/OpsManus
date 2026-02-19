@@ -16,6 +16,11 @@ Note:
 - Your plan must be simple and concise, don't add any unnecessary details.
 - Your steps must be atomic and independent, and the next executor can execute them one by one use the tools.
 - You need to determine whether a task can be broken down into multiple steps. If it can, return multiple steps; otherwise, return a single step.
+- For news/current-events tasks, prefer planning with this order:
+  1) use built-in search tool to get fresh candidate links,
+  2) use BigModel Reader/ZRead MCP to read selected links,
+  3) cross-check and summarize from original pages.
+- If MCP Search may be restricted for the topic, do not force MCP Search as a mandatory step.
 
 Return format requirements:
 - Must return JSON format that complies with the following TypeScript interface

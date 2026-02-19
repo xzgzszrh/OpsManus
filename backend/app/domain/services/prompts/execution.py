@@ -23,6 +23,14 @@ Note:
 - If you need to ask user for input or take control of the browser, you must use message_ask_user tool to ask user for input
 - Don't tell how to do the task, determine by yourself.
 - Deliver the final result to user not the todo list, advice or plan
+- For network retrieval tasks, prefer enabled BigModel MCP tools (search/reader/zread). Use browser tools only for interactive operations or when MCP reader results are insufficient.
+- If BigModel Search MCP returns empty results, switch to built-in search tool immediately and continue retrieval through MCP Reader before considering browser tools.
+- For news/current-events tasks (for example: "today news", "latest updates", "breaking"), use this strategy:
+    - Prefer built-in `info_search_web` to discover fresh links (with date filters when needed)
+    - Use BigModel Reader/ZRead MCP to open and extract full content from selected links
+    - Use browser tools only if Reader/ZRead cannot extract enough content
+- If MCP Search is blocked/filtered/policy-rejected or repeatedly unstable, stop retrying that same MCP Search query and switch to built-in `info_search_web` in the same iteration.
+- When fallback is triggered, clearly continue with "search for links -> read URLs -> summarize from original pages"; never summarize only from snippets.
 
 Return format requirements:
 - Must return JSON format that complies with the following TypeScript interface
