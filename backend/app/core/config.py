@@ -63,7 +63,7 @@ class Settings(BaseSettings):
     jwt_refresh_token_expire_days: int = 7
     
     # MCP configuration
-    mcp_config_path: str = "/etc/mcp.json"
+    mcp_config_path: str = "mcp.json"
     
     # Logging configuration
     log_level: str = "INFO"
@@ -80,7 +80,11 @@ class Settings(BaseSettings):
 @lru_cache()
 def get_settings() -> Settings:
     """Get application settings"""
-    project_root_env = Path(__file__).resolve().parents[3] / ".env"
+    project_root = Path(__file__).resolve().parents[3]
+    project_root_env = project_root / ".env"
     settings = Settings(_env_file=(str(project_root_env), ".env"))
+    mcp_path = Path(settings.mcp_config_path)
+    if not mcp_path.is_absolute():
+        settings.mcp_config_path = str((project_root / mcp_path).resolve())
     settings.validate()
-    return settings 
+    return settings

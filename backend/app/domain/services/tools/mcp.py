@@ -1,5 +1,6 @@
 import os
 import logging
+import json
 from typing import Dict, Any, List, Optional
 from contextlib import AsyncExitStack
 
@@ -14,6 +15,37 @@ from app.domain.models.tool_result import ToolResult
 from app.domain.models.mcp_config import MCPConfig, MCPServerConfig
 
 logger = logging.getLogger(__name__)
+
+BIGMODEL_SERVER_CANONICAL = {
+    "bigmodel_search": {
+        "url": "https://open.bigmodel.cn/api/mcp/web_search_prime/mcp",
+        "transport": "streamable-http",
+    },
+    "bigmodel_reader": {
+        "url": "https://open.bigmodel.cn/api/mcp/web_reader/mcp",
+        "transport": "streamable-http",
+    },
+    "bigmodel_zread": {
+        "url": "https://open.bigmodel.cn/api/mcp/zread/mcp",
+        "transport": "streamable-http",
+    },
+    "bigmodel_vision": {
+        "command": "npx",
+        "args": ["-y", "@z_ai/mcp-server"],
+        "transport": "stdio",
+    },
+}
+
+BIGMODEL_SEARCH_ALLOWED = {
+    "search_query",
+    "search_domain_filter",
+    "search_recency_filter",
+    "content_size",
+    "location",
+}
+BIGMODEL_SEARCH_RECENCY = {"oneDay", "oneWeek", "oneMonth", "oneYear", "noLimit"}
+BIGMODEL_SEARCH_CONTENT_SIZE = {"medium", "high"}
+BIGMODEL_SEARCH_LOCATION = {"cn", "us"}
 
 
 class MCPClientManager:
@@ -38,25 +70,78 @@ class MCPClientManager:
             await self._connect_servers()
             
             self._initialized = True
-            logger.info("MCP 客户端管理器初始化成功")
+            logger.info(f"MCP 客户端管理器初始化完成，已连接 {len(self._clients)} 个服务器")
             
-        except Exception as e:
-            logger.error(f"MCP 客户端管理器初始化失败: {e}")
-            raise
+        except BaseException as e:
+            # MCP should be best-effort and must not cancel the whole agent task.
+            logger.error(f"MCP 客户端管理器初始化异常，降级继续: {e}")
+            self._initialized = True
 
     
     async def _connect_servers(self):
         """连接到所有启用的 MCP 服务器"""
         for server_name, server_config in self._config.mcpServers.items():
+            self._normalize_bigmodel_server_config(server_name, server_config)
             if not server_config.enabled:
+                continue
+            if not self._is_server_connectable(server_name, server_config):
                 continue
                 
             try:
                 await self._connect_server(server_name, server_config)
-            except Exception as e:
+            except BaseException as e:
                 logger.error(f"连接到 MCP 服务器 {server_name} 失败: {e}")
                 # 继续连接其他服务器
                 continue
+
+    @staticmethod
+    def _normalize_bigmodel_server_config(server_name: str, server_config: MCPServerConfig) -> None:
+        canonical = BIGMODEL_SERVER_CANONICAL.get(server_name)
+        if not canonical:
+            return
+        if "url" in canonical:
+            server_config.url = canonical["url"]
+        if "command" in canonical:
+            server_config.command = canonical["command"]
+        if "args" in canonical:
+            server_config.args = canonical["args"]
+        if "transport" in canonical:
+            server_config.transport = canonical["transport"]
+
+    @staticmethod
+    def _sanitize_headers(headers: Optional[Dict[str, str]]) -> Dict[str, str]:
+        """Remove invalid/empty headers to avoid protocol errors in httpx."""
+        if not headers:
+            return {}
+        cleaned: Dict[str, str] = {}
+        for key, value in headers.items():
+            if value is None:
+                continue
+            text = str(value).strip()
+            if not text:
+                continue
+            if key.lower() == "authorization":
+                lower = text.lower()
+                if lower == "bearer" or lower == "bearer:":
+                    continue
+                if lower.startswith("bearer ") and not text[7:].strip():
+                    continue
+            cleaned[key] = text
+        return cleaned
+
+    def _is_server_connectable(self, server_name: str, server_config: MCPServerConfig) -> bool:
+        """
+        Best-effort guard:
+        - sanitize headers before connection
+        - skip known BigModel HTTP servers when Authorization is missing/invalid
+        """
+        server_config.headers = self._sanitize_headers(server_config.headers)
+        if server_config.transport in ["sse", "streamable-http"] and server_name.startswith("bigmodel_"):
+            auth = (server_config.headers or {}).get("Authorization", "")
+            if not auth.lower().startswith("bearer ") or not auth[7:].strip():
+                logger.warning(f"跳过 MCP 服务器 {server_name}: 缺少有效 Authorization Bearer token")
+                return False
+        return True
     
     async def _connect_server(self, server_name: str, server_config: MCPServerConfig):
         """连接到单个 MCP 服务器"""
@@ -72,7 +157,7 @@ class MCPClientManager:
             else:
                 logger.error(f"不支持的传输类型: {transport_type}")
                 
-        except Exception as e:
+        except BaseException as e:
             logger.error(f"连接 MCP 服务器 {server_name} 失败: {e}")
             raise
     
@@ -116,7 +201,7 @@ class MCPClientManager:
             
             logger.info(f"成功连接到 stdio MCP 服务器: {server_name}")
             
-        except Exception as e:
+        except BaseException as e:
             logger.error(f"连接到 stdio MCP 服务器 {server_name} 失败: {e}")
             raise
     
@@ -149,7 +234,7 @@ class MCPClientManager:
             
             logger.info(f"成功连接到 HTTP MCP 服务器: {server_name}")
             
-        except Exception as e:
+        except BaseException as e:
             logger.error(f"连接到 HTTP MCP 服务器 {server_name} 失败: {e}")
             raise
     
@@ -165,7 +250,7 @@ class MCPClientManager:
             raise ValueError(f"服务器 {server_name} 缺少 url 配置")
         
         # 获取可选配置
-        headers = server_config.headers or {}
+        headers = self._sanitize_headers(server_config.headers)
         
         try:
             # 准备连接参数
@@ -202,7 +287,7 @@ class MCPClientManager:
             
             logger.info(f"成功连接到 streamable-http MCP 服务器: {server_name} ({url})")
             
-        except Exception as e:
+        except BaseException as e:
             logger.error(f"连接到 streamable-http MCP 服务器 {server_name} 失败: {e}")
             raise
     
@@ -214,7 +299,7 @@ class MCPClientManager:
             self._tools_cache[server_name] = tools
             logger.info(f"服务器 {server_name} 提供 {len(tools)} 个工具")
             
-        except Exception as e:
+        except BaseException as e:
             logger.error(f"获取服务器 {server_name} 工具列表失败: {e}")
             self._tools_cache[server_name] = []
     
@@ -268,6 +353,8 @@ class MCPClientManager:
                     success=False,
                     message=f"MCP 服务器 {server_name} 未连接"
                 )
+
+            arguments = self._normalize_bigmodel_arguments(server_name, original_tool_name, arguments)
             
             # 调用工具
             result = await session.call_tool(original_tool_name, arguments)
@@ -281,10 +368,22 @@ class MCPClientManager:
                             content.append(item.text)
                         else:
                             content.append(str(item))
-                
+                merged = '\n'.join(content) if content else "工具执行成功"
+                normalized = self._parse_deep_json(merged)
+                # BigModel search occasionally returns "[]". Treat as empty retrieval failure
+                # so planner can immediately fallback to other tools instead of looping.
+                if server_name == "bigmodel_search" and isinstance(normalized, list) and len(normalized) == 0:
+                    return ToolResult(
+                        success=False,
+                        message=(
+                            "BigModel Search MCP returned empty results. "
+                            "Fallback to built-in search tool, then use MCP Reader for URL extraction."
+                        ),
+                        data=merged,
+                    )
                 return ToolResult(
                     success=True,
-                    data='\n'.join(content) if content else "工具执行成功"
+                    data=merged
                 )
             else:
                 return ToolResult(
@@ -298,6 +397,114 @@ class MCPClientManager:
                 success=False,
                 message=f"调用 MCP 工具失败: {str(e)}"
             )
+
+    @staticmethod
+    def _parse_deep_json(value: Any, max_depth: int = 4) -> Any:
+        current = value
+        for _ in range(max_depth):
+            if not isinstance(current, str):
+                break
+            text = current.strip()
+            if not text:
+                break
+            try:
+                parsed = json.loads(text)
+            except Exception:
+                break
+            if parsed == current:
+                break
+            current = parsed
+        return current
+
+    @staticmethod
+    def _normalize_bigmodel_arguments(server_name: str, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Normalize arguments to official BigModel MCP schema.
+        Avoid extra keys or alias keys causing unstable/empty responses.
+        """
+        args = dict(arguments or {})
+
+        if server_name == "bigmodel_search" and tool_name == "webSearchPrime":
+            # alias mapping
+            if "search_query" not in args:
+                for alias in ("query", "keyword", "q"):
+                    if alias in args and str(args[alias]).strip():
+                        args["search_query"] = args[alias]
+                        break
+            if "search_domain_filter" not in args:
+                for alias in ("domain", "site"):
+                    if alias in args and str(args[alias]).strip():
+                        args["search_domain_filter"] = args[alias]
+                        break
+            if "search_recency_filter" not in args:
+                for alias in ("date_range", "recency", "time_range"):
+                    if alias in args and str(args[alias]).strip():
+                        v = str(args[alias]).strip()
+                        mapped = {
+                            "past_day": "oneDay",
+                            "day": "oneDay",
+                            "past_week": "oneWeek",
+                            "week": "oneWeek",
+                            "past_month": "oneMonth",
+                            "month": "oneMonth",
+                            "past_year": "oneYear",
+                            "year": "oneYear",
+                        }.get(v, v)
+                        args["search_recency_filter"] = mapped
+                        break
+
+            # keep only official schema keys
+            args = {k: v for k, v in args.items() if k in BIGMODEL_SEARCH_ALLOWED and v not in (None, "")}
+
+            # value normalization
+            q = str(args.get("search_query", "")).strip()
+            if len(q) > 70:
+                q = q[:70]
+            args["search_query"] = q
+
+            if "search_recency_filter" in args:
+                v = str(args["search_recency_filter"]).strip()
+                if v not in BIGMODEL_SEARCH_RECENCY:
+                    args.pop("search_recency_filter", None)
+            if "content_size" in args:
+                v = str(args["content_size"]).strip()
+                if v not in BIGMODEL_SEARCH_CONTENT_SIZE:
+                    args["content_size"] = "high"
+            else:
+                args["content_size"] = "high"
+            if "location" in args:
+                v = str(args["location"]).strip().lower()
+                if v not in BIGMODEL_SEARCH_LOCATION:
+                    args.pop("location", None)
+
+            logger.info(f"BigModel search normalized args: {args}")
+            return args
+
+        if server_name == "bigmodel_reader" and tool_name == "webReader":
+            if "url" not in args:
+                for alias in ("link", "uri"):
+                    if alias in args and str(args[alias]).strip():
+                        args["url"] = args[alias]
+                        break
+            # keep useful args only
+            allowed = {
+                "url",
+                "timeout",
+                "no_cache",
+                "return_format",
+                "retain_images",
+                "no_gfm",
+                "keep_img_data_url",
+                "with_images_summary",
+                "with_links_summary",
+            }
+            args = {k: v for k, v in args.items() if k in allowed and v not in (None, "")}
+            if "return_format" not in args:
+                args["return_format"] = "markdown"
+            logger.info(f"BigModel reader normalized args: {args}")
+            return args
+
+        return args
 
     async def cleanup(self):
         """清理资源"""

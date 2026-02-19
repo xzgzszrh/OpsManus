@@ -121,3 +121,11 @@ mcp.json
 
 # Frontend whitelist
 !frontend/src/lib/
+
+# Runtime generated backend data
+backend/data/files/
+
+# Runtime generated backend sqlite db
+backend/data/manus.db
+backend/data/*.db-shm
+backend/data/*.db-wal

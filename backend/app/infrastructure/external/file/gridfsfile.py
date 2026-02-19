@@ -1,6 +1,6 @@
 import logging
 import io
-from typing import BinaryIO, Optional, Dict, Any, Tuple
+from typing import BinaryIO, Optional, Dict, Any, Tuple, Union
 from datetime import datetime
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorGridFSBucket
@@ -61,7 +61,7 @@ class GridFSFileStorage(FileStorage):
     
     async def upload_file(
         self,
-        file_data: BinaryIO,
+        file_data: Union[BinaryIO, bytes, bytearray],
         filename: str,
         user_id: str,
         content_type: Optional[str] = None,
@@ -82,10 +82,16 @@ class GridFSFileStorage(FileStorage):
             if content_type:
                 file_metadata['contentType'] = content_type
             
+            stream = io.BytesIO(file_data) if isinstance(file_data, (bytes, bytearray)) else file_data
+            try:
+                stream.seek(0)
+            except Exception:
+                pass
+
             # Upload directly from file stream to avoid loading entire file into memory
             file_id = await bucket.upload_from_stream(
                 filename,
-                file_data,
+                stream,
                 metadata=file_metadata
             )
             

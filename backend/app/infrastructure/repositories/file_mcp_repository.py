@@ -1,4 +1,5 @@
 import os
+import json
 import logging
 from app.domain.repositories.mcp_repository import MCPRepository
 from app.domain.models.mcp_config import MCPConfig
@@ -21,3 +22,16 @@ class FileMCPRepository(MCPRepository):
             logger.exception(f"Error reading MCP config file: {e}")
         
         return MCPConfig(mcpServers={})
+
+    async def save_mcp_config(self, config: MCPConfig) -> None:
+        """Save MCP config to file"""
+        file_path = get_settings().mcp_config_path
+        folder = os.path.dirname(file_path)
+        if folder:
+            os.makedirs(folder, exist_ok=True)
+        try:
+            with open(file_path, "w") as file:
+                json.dump(config.model_dump(mode="json"), file, ensure_ascii=False, indent=2)
+        except Exception as e:
+            logger.exception(f"Error writing MCP config file: {e}")
+            raise

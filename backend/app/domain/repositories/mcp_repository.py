@@ -7,3 +7,7 @@ class MCPRepository(Protocol):
     async def get_mcp_config(self) -> MCPConfig:
         """Get the MCP config"""
         ...
+
+    async def save_mcp_config(self, config: MCPConfig) -> None:
+        """Persist MCP config"""
+        ...

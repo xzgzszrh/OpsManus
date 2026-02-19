@@ -6,7 +6,7 @@ import uuid
 import asyncio
 from datetime import UTC, datetime
 from functools import lru_cache
-from typing import Any, BinaryIO, Dict, Optional, Tuple
+from typing import Any, BinaryIO, Dict, Optional, Tuple, Union
 
 from app.core.config import get_settings
 from app.domain.external.file import FileStorage
@@ -27,7 +27,7 @@ class LocalFileStorage(FileStorage):
 
     async def upload_file(
         self,
-        file_data: BinaryIO,
+        file_data: Union[BinaryIO, bytes, bytearray],
         filename: str,
         user_id: str,
         content_type: Optional[str] = None,
@@ -39,12 +39,17 @@ class LocalFileStorage(FileStorage):
         file_metadata = metadata or {}
 
         def _write_file() -> int:
+            stream: BinaryIO
+            if isinstance(file_data, (bytes, bytearray)):
+                stream = io.BytesIO(file_data)
+            else:
+                stream = file_data
             try:
-                file_data.seek(0)
+                stream.seek(0)
             except Exception:
                 pass
             with open(storage_path, "wb") as f:
-                shutil.copyfileobj(file_data, f)
+                shutil.copyfileobj(stream, f)
             return os.path.getsize(storage_path)
 
         size = await asyncio.to_thread(_write_file)

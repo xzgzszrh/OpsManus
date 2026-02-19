@@ -2,6 +2,7 @@ import { computed, Ref } from 'vue';
 import type { ToolContent } from '../types/message';
 import { useI18n } from 'vue-i18n';
 import { TOOL_ICON_MAP, TOOL_NAME_MAP, TOOL_FUNCTION_MAP, TOOL_FUNCTION_ARG_MAP, TOOL_COMPONENT_MAP } from '../constants/tool';
+import { mcpServerLabelKey, parseMCPFunction } from '@/utils/mcp';
 
 export function useToolInfo(tool?: Ref<ToolContent | undefined>) {
   const { t } = useI18n();
@@ -11,7 +12,7 @@ export function useToolInfo(tool?: Ref<ToolContent | undefined>) {
     
     // MCP tool
     if (tool.value.function.startsWith('mcp_')) {
-      const mcpToolName = tool.value.function.replace(/^mcp_/, '');
+      const parsed = parseMCPFunction(tool.value.function);
       let functionArg = '';
       
       const args = tool.value.args;
@@ -26,9 +27,9 @@ export function useToolInfo(tool?: Ref<ToolContent | undefined>) {
       }
       
       return {
-        icon: TOOL_ICON_MAP['mcp'] || null,
-        name: t(TOOL_NAME_MAP['mcp'] || 'MCP Tool'),
-        function: mcpToolName,
+        icon: TOOL_ICON_MAP[`mcp_${parsed.serverAlias}`] || TOOL_ICON_MAP['mcp'] || null,
+        name: t(TOOL_NAME_MAP[`mcp_${parsed.serverAlias}`] || mcpServerLabelKey(parsed.serverAlias)),
+        function: parsed.toolName,
         functionArg: functionArg,
         view: TOOL_COMPONENT_MAP['mcp'] || null
       };

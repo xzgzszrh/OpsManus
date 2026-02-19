@@ -58,7 +58,7 @@ def get_agent_service() -> AgentService:
     json_parser = LLMJsonParser()
     file_storage = get_file_storage()
     search_engine = get_search_engine()
-    mcp_repository = FileMCPRepository()
+    mcp_repository = get_mcp_repository()
     node_service = get_node_service()
     ticket_repository = SQLiteTicketRepository()
     
@@ -139,6 +139,12 @@ def get_node_service() -> NodeService:
         repository=SQLiteNodeRepository(),
         session_repository=SQLiteSessionRepository(),
     )
+
+
+@lru_cache()
+def get_mcp_repository() -> FileMCPRepository:
+    logger.info("Creating MCPRepository instance")
+    return FileMCPRepository()
 
 
 @lru_cache()

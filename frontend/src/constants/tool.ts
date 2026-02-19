@@ -85,6 +85,10 @@ export const TOOL_NAME_MAP: {[key: string]: string} = {
   "info": "Information",
   "message": "Message",
   "mcp": "MCP Tool",
+  "mcp_vision": "BigModel Vision MCP",
+  "mcp_search": "BigModel Search MCP",
+  "mcp_reader": "BigModel Reader MCP",
+  "mcp_zread": "BigModel ZRead MCP",
   "ssh": "Terminal"
 };
 
@@ -103,6 +107,10 @@ export const TOOL_ICON_MAP: {[key: string]: any} = {
   "search": SearchIcon,
   "message": "",
   "mcp": SearchIcon,  // 暂时使用搜索图标，可以后续创建专门的MCP图标
+  "mcp_vision": BrowserIcon,
+  "mcp_search": SearchIcon,
+  "mcp_reader": BrowserIcon,
+  "mcp_zread": EditIcon,
   "ssh": ShellIcon
 };
 

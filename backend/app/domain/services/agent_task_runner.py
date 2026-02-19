@@ -1,6 +1,7 @@
 from typing import Optional, AsyncGenerator, List
 import asyncio
 import logging
+import io
 from pydantic import TypeAdapter
 from app.domain.models.message import Message
 from app.domain.models.event import (
@@ -107,7 +108,8 @@ class AgentTaskRunner(TaskRunner):
     
     async def _get_browser_screenshot(self) -> str:
         screenshot = await self._browser.screenshot()
-        result = await self._file_storage.upload_file(screenshot, "screenshot.png", self._user_id)
+        screenshot_stream = io.BytesIO(screenshot) if isinstance(screenshot, (bytes, bytearray)) else screenshot
+        result = await self._file_storage.upload_file(screenshot_stream, "screenshot.png", self._user_id)
         return result.file_id
 
     async def _sync_file_to_storage(self, file_path: str) -> Optional[FileInfo]:
@@ -197,6 +199,10 @@ class AgentTaskRunner(TaskRunner):
                         if hasattr(event.function_result, 'data') and event.function_result.data:
                             logger.debug(f"MCP tool result data: {event.function_result.data}")
                             event.tool_content = McpToolContent(result=event.function_result.data)
+                        elif hasattr(event.function_result, 'success') and not event.function_result.success:
+                            err = event.function_result.message or "MCP tool failed"
+                            logger.debug(f"MCP tool result failed: {err}")
+                            event.tool_content = McpToolContent(result=f"[MCP_ERROR] {err}")
                         elif hasattr(event.function_result, 'success') and event.function_result.success:
                             logger.debug(f"MCP tool result (success, no data): {event.function_result}")
                             result_data = event.function_result.model_dump() if hasattr(event.function_result, 'model_dump') else str(event.function_result)
@@ -268,8 +274,22 @@ class AgentTaskRunner(TaskRunner):
             await self._session_repository.update_status(self._session_id, SessionStatus.COMPLETED)
         except asyncio.CancelledError:
             logger.info(f"Agent {self._agent_id} task cancelled")
-            await self._put_and_add_event(task, DoneEvent())
-            await self._session_repository.update_status(self._session_id, SessionStatus.COMPLETED)
+            # Keep session state consistent even under cancellation pressure.
+            # uncancel() avoids immediate re-raise on subsequent awaits in this handler.
+            current = asyncio.current_task()
+            if current and hasattr(current, "uncancel"):
+                current.uncancel()
+            try:
+                await asyncio.shield(self._put_and_add_event(task, DoneEvent()))
+            except Exception as e:
+                logger.exception(f"Agent {self._agent_id} failed to emit done event on cancel: {e}")
+            try:
+                await asyncio.shield(
+                    self._session_repository.update_status(self._session_id, SessionStatus.COMPLETED)
+                )
+            except Exception as e:
+                logger.exception(f"Agent {self._agent_id} failed to update status on cancel: {e}")
+            return
         except Exception as e:
             logger.exception(f"Agent {self._agent_id} task encountered exception: {str(e)}")
             await self._put_and_add_event(task, ErrorEvent(error=f"Task error: {str(e)}"))

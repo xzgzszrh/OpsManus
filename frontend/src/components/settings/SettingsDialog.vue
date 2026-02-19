@@ -28,6 +28,10 @@
         <template #nodes>
           <NodeSettings />
         </template>
+
+        <template #mcp>
+          <MCPSettings />
+        </template>
         
       </SettingsTabs>
       
@@ -37,7 +41,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { UserRound, Settings2, Server } from 'lucide-vue-next'
+import { UserRound, Settings2, Server, PlugZap } from 'lucide-vue-next'
 import {
   Dialog,
   DialogContent,
@@ -50,6 +54,7 @@ import AccountSettings from './AccountSettings.vue'
 import GeneralSettings from './GeneralSettings.vue'
 import ProfileSettings from './ProfileSettings.vue'
 import NodeSettings from './NodeSettings.vue'
+import MCPSettings from './MCPSettings.vue'
 import type { TabItem, SubPageConfig } from './SettingsTabs.vue'
 
 // Use global settings dialog state
@@ -74,6 +79,11 @@ const tabs: TabItem[] = [
     id: 'nodes',
     label: 'Server Nodes',
     icon: Server
+  },
+  {
+    id: 'mcp',
+    label: 'MCP Servers',
+    icon: PlugZap
   }
 ]
 

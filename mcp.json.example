@@ -1,43 +1,45 @@
 {
   "mcpServers": {
-    "filesystem": {
+    "bigmodel_vision": {
       "command": "npx",
       "args": [
         "-y",
-        "@modelcontextprotocol/server-filesystem",
-        "/tmp"
+        "@z_ai/mcp-server"
       ],
       "transport": "stdio",
-      "enabled": true,
-      "description": "Access to local filesystem"
-    },
-    "github": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-github"
-      ],
-      "transport": "stdio",
-      "enabled": true,
-      "description": "GitHub API integration",
+      "enabled": false,
+      "description": "BigModel Vision MCP",
       "env": {
-        "GITHUB_TOKEN": "your-github-token"
+        "Z_AI_API_KEY": "",
+        "Z_AI_MODE": "ZHIPU"
       }
     },
-    "example-http": {
-      "url": "http://localhost:8080/mcp",
-      "transport": "sse",
-      "enabled": true,
-      "description": "Example HTTP MCP server",
-      "headers": {
-        "Authorization": "Bearer your-token"
-      }
-    },
-    "example-streamable": {
-      "url": "http://localhost:9090/mcp",
+    "bigmodel_search": {
+      "url": "https://open.bigmodel.cn/api/mcp/web_search_prime/mcp",
       "transport": "streamable-http",
-      "enabled": true,
-      "description": "Example streamable HTTP MCP server"
+      "enabled": false,
+      "description": "BigModel Search MCP",
+      "headers": {
+        "Authorization": "Bearer "
+      }
+    },
+    "bigmodel_reader": {
+      "url": "https://open.bigmodel.cn/api/mcp/web_reader/mcp",
+      "transport": "streamable-http",
+      "enabled": false,
+      "description": "BigModel Reader MCP",
+      "headers": {
+        "Authorization": "Bearer "
+      }
+    },
+    "bigmodel_zread": {
+      "url": "https://open.bigmodel.cn/api/mcp/zread/mcp",
+      "transport": "streamable-http",
+      "enabled": false,
+      "description": "BigModel ZRead MCP",
+      "headers": {
+        "Authorization": "Bearer "
+      }
     }
   }
-} 
+}

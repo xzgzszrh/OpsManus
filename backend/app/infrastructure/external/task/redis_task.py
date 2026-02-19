@@ -2,6 +2,7 @@ import asyncio
 import uuid
 import logging
 from typing import Optional, Dict
+import traceback
 
 from app.domain.external.task import Task, TaskRunner
 from app.infrastructure.external.message_queue.redis_stream_queue import RedisStreamQueue, MessageQueue
@@ -62,6 +63,8 @@ class RedisStreamTask(Task):
             bool: True if the task is cancelled, False otherwise
         """
         if not self.done:
+            caller = "".join(traceback.format_stack(limit=8))
+            logger.warning(f"Task {self._id} cancel requested. Caller stack:\n{caller}")
             self._execution_task.cancel()
             logger.info(f"Task {self._id} cancelled")
             self._cleanup_registry()
